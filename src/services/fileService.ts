@@ -5,11 +5,20 @@ import { ImageService } from './imageService';
 
 // Ensure all template assets are included in the bundle and retrievable by filename
 const templateAssets = import.meta.glob('../assets/templates/*', { eager: true, as: 'url' }) as Record<string, string>;
+const cleanedTemplateAssets = import.meta.glob('../assets/templates/cleaned_templates/*', { eager: true, as: 'url' }) as Record<string, string>;
+
 function getTemplateUrl(fileName: string): string {
   for (const [path, url] of Object.entries(templateAssets)) {
     if (path.endsWith('/' + fileName)) return url as string;
   }
   throw new Error(`Template asset not found: ${fileName}`);
+}
+
+function getCleanedTemplateUrl(fileName: string): string {
+  for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+    if (path.endsWith('/' + fileName)) return url as string;
+  }
+  throw new Error(`Cleaned template asset not found: ${fileName}`);
 }
 
 export class FileService {

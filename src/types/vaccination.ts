@@ -83,10 +83,10 @@ export const ALTERNATIVE_CONFIGS: Record<string, AlternativeConfig> = {
       en: 'The flu shot is free for you, it is paid by your employer.'
     },
     posterTemplate: {
-      no: 'cleaned_templates/Eksisterende kunder - vaksinert.png',
-      en: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png'
+      no: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png', // Norwegian template
+      en: 'cleaned_templates/Eksisterende kunder - vaksinert.png' // English template
     },
-    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert.png',
+    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png',
     includeBoostrix: false
   },
   '6': {
@@ -96,10 +96,10 @@ export const ALTERNATIVE_CONFIGS: Record<string, AlternativeConfig> = {
       en: 'Test alternative for clean templates'
     },
     posterTemplate: {
-      no: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png',
-      en: 'cleaned_templates/Eksisterende kunder - vaksinert.png'
+      no: 'cleaned_templates/Eksisterende kunder - vaksinert.png', // Norwegian template  
+      en: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png' // English template
     },
-    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png',
+    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert.png',
     includeBoostrix: false
   }
 };

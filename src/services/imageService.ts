@@ -88,10 +88,10 @@ export class ImageService {
       if (templatePath.includes('cleaned_templates/')) {
         // Cleaned templates - use relative positioning instead of hardcoded coordinates
         // QR code: 3/4 down and 3/4 to the right on the image
-        const qrCenterX = Math.round(canvas.width * 0.75); // 75% from left (3/4 right)
-        const qrCenterY = Math.round(canvas.height * 0.75); // 75% from top (3/4 down)
-        const qrSize = 300; // Double the previous size (was 150, now 300)
-        
+        const qrCenterX = Math.round(canvas.width * 0.75); 
+        const qrCenterY = Math.round(canvas.height * 0.85); 
+        const qrSize = Math.round(canvas.width * 0.4); 
+
         // Calculate QR position (top-left corner) from center coordinates
         const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
         const qrY = qrCenterY - (qrSize / 2); // Move up by half size from center
@@ -139,12 +139,12 @@ export class ImageService {
       if (templatePath.includes('cleaned_templates/')) {
         // Cleaned templates - use relative positioning for date
         // Place date around 1/3 down and near left margin
-        const dateX = Math.round(canvas.width * 0.085); // ~8.5% from left edge (similar to bullet points)
-        const dateY = Math.round(canvas.height * 0.33); // ~33% down from top
+        const dateX = Math.round(canvas.width * 0.17); // Moved 10% to the right (0.07 + 0.10)
+        const dateY = Math.round(canvas.height * 0.57); 
         
         // Place date text (no masking needed on clean templates)
         ctx.fillStyle = '#FFFFFF'; // White text to match other bullet points
-        ctx.font = 'bold 26px Arial, sans-serif'; // Match bullet point text size
+        ctx.font = 'bold 39px Arial, sans-serif'; // 1.5x larger text size (26px * 1.5)
         ctx.textAlign = 'left';
         ctx.fillText(dateText, dateX, dateY);
       } else if (templatePath.includes('Versjon_4_eng_new.png')) {

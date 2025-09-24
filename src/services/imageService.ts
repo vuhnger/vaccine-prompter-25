@@ -87,18 +87,17 @@ export class ImageService {
       // Handle different templates with specific positioning
       if (templatePath.includes('cleaned_templates/')) {
         // Cleaned templates - position QR code at specific coordinates
+        // Template size: 1348 × 2000 pixels
         // Center of QR code should be at x=930, y=1590
         const qrCenterX = 930;
         const qrCenterY = 1590;
-        const qrSize = Math.round(canvas.width * 0.32); // Double again (was 0.16, now 0.32)
+        const qrSize = 150; // Fixed size based on reference image (~11% of 1348px width)
         
         // Calculate QR position (top-left corner) from center coordinates
-        // Currently lower-left is at (930, 1590), we want center at (930, 1590)
-        // So we need to move right by qrSize/2 and up by qrSize/2
         const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
         const qrY = qrCenterY - (qrSize / 2); // Move up by half size from center
         
-        // No circular mask needed for cleaned templates - direct placement
+        // Direct placement on cleaned templates
         const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
         
@@ -139,20 +138,15 @@ export class ImageService {
       // MASK AND REPLACE DATE TEXT - like editing text layer in Photoshop
       // Find exact coordinates where date appears in bullet point
       if (templatePath.includes('cleaned_templates/')) {
-        // Cleaned templates - place date under "Vi kommer til din arbeidsplass" text
-        // Assuming the workplace text is in the middle section of the poster
-        const dateX = Math.round(canvas.width * 0.1); // 10% from left edge
-        const dateY = Math.round(canvas.height * 0.6); // 60% down from top (under workplace text)
-        const maskWidth = Math.round(canvas.width * 0.4); // Wide enough for date text
-        const maskHeight = Math.round(canvas.height * 0.05); // Height for text
+        // Cleaned templates - place date under "We will be at your workplace" text
+        // Based on template 1348 × 2000 pixels
+        // Looking at reference, date should be around line 3 of bullet points
+        const dateX = 115; // Align with bullet points (left margin)
+        const dateY = 665; // Below "We will be at your workplace" text
         
-        // Mask area where we'll place the date (assuming light background)
-        ctx.fillStyle = '#FFFFFF'; // White background mask
-        ctx.fillRect(dateX, dateY - maskHeight + 10, maskWidth, maskHeight);
-        
-        // Place date text under workplace text
-        ctx.fillStyle = '#333333'; // Dark text color for visibility
-        ctx.font = 'bold 24px Arial, sans-serif';
+        // Place date text (no masking needed on clean templates)
+        ctx.fillStyle = '#FFFFFF'; // White text to match other bullet points
+        ctx.font = 'bold 26px Arial, sans-serif'; // Match bullet point text size
         ctx.textAlign = 'left';
         ctx.fillText(dateText, dateX, dateY);
       } else if (templatePath.includes('Versjon_4_eng_new.png')) {

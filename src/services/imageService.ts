@@ -85,7 +85,12 @@ export class ImageService {
       let circleRadius, circleCenterX, circleCenterY;
       
       // Handle different templates with specific positioning
-      if (templatePath.includes('Versjon_4_eng_new.png')) {
+      if (templatePath.includes('cleaned_templates/')) {
+        // Cleaned templates - position QR code in lower right corner
+        circleRadius = Math.round(canvas.width * 0.08); // Smaller circle for corner placement
+        circleCenterX = canvas.width - Math.round(canvas.width * 0.12); // Very close to right edge
+        circleCenterY = canvas.height - Math.round(canvas.height * 0.12); // Very close to bottom edge
+      } else if (templatePath.includes('Versjon_4_eng_new.png')) {
         // New Canva template - white circle on the right side
         circleRadius = Math.round(canvas.width * 0.15); // Circle radius based on template
         circleCenterX = canvas.width - Math.round(canvas.width * 0.18); // Position on right side

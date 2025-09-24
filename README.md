@@ -36,7 +36,80 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Running with Docker
+
+You can also run this project using Docker, which provides a consistent environment across different systems.
+
+### Prerequisites for Docker
+- Docker installed on your system
+- Docker Compose (usually included with Docker Desktop)
+
+### Docker Development Setup
+
+**Option 1: Using Docker Compose (Recommended for development)**
+```sh
+# Start development server with hot reload
+docker-compose --profile dev up
+
+# Or for alternative hot reload setup
+docker-compose --profile dev-hot up
+```
+
+**Option 2: Using Docker directly**
+```sh
+# Build the development image
+docker build --target build -t vaccine-prompter-dev .
+
+# Run development container
+docker run -p 5173:5173 -v $(pwd):/app vaccine-prompter-dev npm run dev
+```
+
+### Docker Production Setup
+
+**Using Docker Compose:**
+```sh
+# Build and run production version
+docker-compose --profile prod up --build
+```
+
+**Using Docker directly:**
+```sh
+# Build production image
+docker build -t vaccine-prompter .
+
+# Run production container
+docker run -p 80:80 vaccine-prompter
+```
+
+The production setup uses nginx to serve the built static files for optimal performance.
+
+### Docker Commands Summary
+
+| Command | Description |
+|---------|-------------|
+| `docker-compose --profile dev up` | Development with hot reload |
+| `docker-compose --profile prod up` | Production build |
+| `docker-compose down` | Stop and remove containers |
+| `docker-compose logs` | View container logs |
+
+## Available Scripts
+
+From your `package.json`, you have these available commands:
+
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run build:dev` - Build in development mode
+- `npm run lint` - Run ESLint for code linting
+- `npm run preview` - Preview the production build locally
+
+## Docker vs npm/bun
+
+- **Use npm/bun** for quick local development and when working with Lovable
+- **Use Docker** for:
+  - Consistent environments across team members
+  - Production-like testing
+  - Deployment to container platforms
+  - When you need isolated dependencies
 
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.

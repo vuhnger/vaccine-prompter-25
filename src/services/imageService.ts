@@ -86,12 +86,11 @@ export class ImageService {
       
       // Handle different templates with specific positioning
       if (templatePath.includes('cleaned_templates/')) {
-        // Cleaned templates - position QR code at specific coordinates
-        // Template size: 1348 × 2000 pixels
-        // Center of QR code should be at x=930, y=1590
-        const qrCenterX = 930;
-        const qrCenterY = 1590;
-        const qrSize = 150; // Fixed size based on reference image (~11% of 1348px width)
+        // Cleaned templates - use relative positioning instead of hardcoded coordinates
+        // QR code: 3/4 down and 3/4 to the right on the image
+        const qrCenterX = Math.round(canvas.width * 0.75); // 75% from left (3/4 right)
+        const qrCenterY = Math.round(canvas.height * 0.75); // 75% from top (3/4 down)
+        const qrSize = 300; // Double the previous size (was 150, now 300)
         
         // Calculate QR position (top-left corner) from center coordinates
         const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
@@ -138,11 +137,10 @@ export class ImageService {
       // MASK AND REPLACE DATE TEXT - like editing text layer in Photoshop
       // Find exact coordinates where date appears in bullet point
       if (templatePath.includes('cleaned_templates/')) {
-        // Cleaned templates - place date under "We will be at your workplace" text
-        // Based on template 1348 × 2000 pixels
-        // Looking at reference, date should be around line 3 of bullet points
-        const dateX = 115; // Align with bullet points (left margin)
-        const dateY = 665; // Below "We will be at your workplace" text
+        // Cleaned templates - use relative positioning for date
+        // Place date around 1/3 down and near left margin
+        const dateX = Math.round(canvas.width * 0.085); // ~8.5% from left edge (similar to bullet points)
+        const dateY = Math.round(canvas.height * 0.33); // ~33% down from top
         
         // Place date text (no masking needed on clean templates)
         ctx.fillStyle = '#FFFFFF'; // White text to match other bullet points

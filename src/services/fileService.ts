@@ -29,6 +29,70 @@ function getCleanedTemplateUrl(fileName: string): string {
 }
 
 export class FileService {
+  static async generatePreviewImages(formData: VaccinationFormData): Promise<{
+    posterNO: Blob | null;
+    posterEN: Blob | null;
+    internalPoster: Blob | null;
+  }> {
+    const config = ALTERNATIVE_CONFIGS[formData.alternativ];
+    
+    if (!config) {
+      throw new Error(`No configuration found for alternative: ${formData.alternativ}`);
+    }
+    
+    console.log('Using config:', config);
+    
+    try {
+      // Generate main posters (Norwegian and English)
+      console.log('Getting template URLs...');
+      const posterPathNO = getTemplateUrl(config.posterTemplate.no);
+      const posterPathEN = getTemplateUrl(config.posterTemplate.en);
+      
+      console.log('Template URLs:', { posterPathNO, posterPathEN });
+      
+      console.log('Generating Norwegian poster...');
+      const posterNO = await ImageService.createPosterWithQRAndDate(
+        posterPathNO,
+        formData.bookinglink,
+        formData.datoNO,
+        false
+      );
+      
+      console.log('Generating English poster...');
+      const posterEN = await ImageService.createPosterWithQRAndDate(
+        posterPathEN,
+        formData.bookinglink,
+        formData.dateEN,
+        true
+      );
+      
+      // Generate internal poster
+      console.log('Getting internal template URL...');
+      const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
+      
+      console.log('Internal template URL:', internalPosterPath);
+      
+      console.log('Generating internal poster...');
+      const internalPoster = await ImageService.createInternalPoster(
+        internalPosterPath,
+        formData.bookinglink
+      );
+      
+      console.log('All images generated successfully');
+      
+      return {
+        posterNO,
+        posterEN,
+        internalPoster
+      };
+      
+    } catch (error) {
+      console.error('Error in generatePreviewImages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error in preview generation';
+      throw new Error(`Failed to generate preview images: ${errorMessage}`);
+    }
+  }
+
   static async createCompanyFolder(formData: VaccinationFormData): Promise<void> {
     const zip = new JSZip();
     const config = ALTERNATIVE_CONFIGS[formData.alternativ];

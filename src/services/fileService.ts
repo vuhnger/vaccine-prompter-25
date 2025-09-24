@@ -35,6 +35,12 @@ export class FileService {
     const companyFolder = zip.folder(formData.bedriftensNavn);
     const internalFolder = zip.folder(`${formData.bedriftensNavn}2025`);
     
+    // Create additional folder for cleaned template outputs
+    const isCleanedTemplate = config.posterTemplate.no.startsWith('cleaned_templates/') || 
+                               config.posterTemplate.en.startsWith('cleaned_templates/');
+    const cleanedFolder = isCleanedTemplate ? 
+      zip.folder(`${formData.bedriftensNavn}_CleanedTemplates`) : null;
+    
     if (!companyFolder || !internalFolder) {
       throw new Error('Failed to create folders');
     }
@@ -64,17 +70,33 @@ export class FileService {
       const extensionEN = config.posterTemplate.en.endsWith('.pdf') ? 'pdf' : 
                           config.posterTemplate.en.endsWith('.svg') ? 'svg' : 'png';
       
-      companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}.${extensionNO}`, posterNO);
-      companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}(eng).${extensionEN}`, posterEN);
-      
-      // Generate internal poster
-      const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
-      const internalPoster = await ImageService.createInternalPoster(
-        internalPosterPath,
-        formData.bookinglink
-      );
-      
-      internalFolder.file(`${formData.bedriftensNavn} – intern plakat 2025.png`, internalPoster);
+      // Place files in appropriate folders
+      if (isCleanedTemplate && cleanedFolder) {
+        // Place cleaned template outputs in special folder
+        cleanedFolder.file(`Bookingplakat - ${formData.bedriftensNavn}.${extensionNO}`, posterNO);
+        cleanedFolder.file(`Bookingplakat - ${formData.bedriftensNavn}(eng).${extensionEN}`, posterEN);
+        
+        // Also generate internal poster in cleaned folder if using cleaned templates
+        const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
+        const internalPoster = await ImageService.createInternalPoster(
+          internalPosterPath,
+          formData.bookinglink
+        );
+        cleanedFolder.file(`${formData.bedriftensNavn} – intern plakat 2025.png`, internalPoster);
+      } else {
+        // Original folder structure for existing templates
+        companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}.${extensionNO}`, posterNO);
+        companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}(eng).${extensionEN}`, posterEN);
+        
+        // Generate internal poster
+        const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
+        const internalPoster = await ImageService.createInternalPoster(
+          internalPosterPath,
+          formData.bookinglink
+        );
+        
+        internalFolder.file(`${formData.bedriftensNavn} – intern plakat 2025.png`, internalPoster);
+      }
       
       // Add self-declarations based on alternative
       await this.addSelfDeclarations(companyFolder, config.includeBoostrix);

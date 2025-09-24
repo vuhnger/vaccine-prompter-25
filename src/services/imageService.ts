@@ -86,10 +86,24 @@ export class ImageService {
       
       // Handle different templates with specific positioning
       if (templatePath.includes('cleaned_templates/')) {
-        // Cleaned templates - position QR code in lower right corner
-        circleRadius = Math.round(canvas.width * 0.08); // Smaller circle for corner placement
-        circleCenterX = canvas.width - Math.round(canvas.width * 0.12); // Very close to right edge
-        circleCenterY = canvas.height - Math.round(canvas.height * 0.12); // Very close to bottom edge
+        // Cleaned templates - position QR code at specific coordinates
+        // Center of QR code should be at x=930, y=1590
+        const qrCenterX = 930;
+        const qrCenterY = 1590;
+        const qrSize = Math.round(canvas.width * 0.16); // Double the previous size (was 0.08 radius * 1.6)
+        
+        // Calculate QR position (top-left corner) from center coordinates
+        const qrX = qrCenterX - (qrSize / 2);
+        const qrY = qrCenterY - (qrSize / 2);
+        
+        // No circular mask needed for cleaned templates - direct placement
+        const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        
+        // Skip the circular masking logic for cleaned templates
+        circleRadius = 0;
+        circleCenterX = 0;
+        circleCenterY = 0;
       } else if (templatePath.includes('Versjon_4_eng_new.png')) {
         // New Canva template - white circle on the right side
         circleRadius = Math.round(canvas.width * 0.15); // Circle radius based on template
@@ -102,19 +116,23 @@ export class ImageService {
         circleCenterY = canvas.height - Math.round(canvas.height * 0.22); // Center Y of white circle
       }
       
-      // STEP 1: Mask out old QR code by filling with white
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(circleCenterX, circleCenterY, circleRadius, 0, 2 * Math.PI);
-      ctx.fill();
+      // STEP 1: Mask out old QR code by filling with white (skip for cleaned templates)
+      if (circleRadius > 0) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(circleCenterX, circleCenterY, circleRadius, 0, 2 * Math.PI);
+        ctx.fill();
+      }
       
-      // STEP 2: Insert new QR code in exact same position as original
-      const qrSize = circleRadius * 1.6; // QR should fill most of the circle
-      const qrX = circleCenterX - (qrSize / 2); // Center QR in circle
-      const qrY = circleCenterY - (qrSize / 2); // Center QR in circle
-      
-      const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);
-      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+      // STEP 2: Insert new QR code (skip for cleaned templates as already done above)
+      if (circleRadius > 0) {
+        const qrSize = circleRadius * 1.6; // QR should fill most of the circle
+        const qrX = circleCenterX - (qrSize / 2); // Center QR in circle
+        const qrY = circleCenterY - (qrSize / 2); // Center QR in circle
+        
+        const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+      }
       
       // MASK AND REPLACE DATE TEXT - like editing text layer in Photoshop
       // Find exact coordinates where date appears in bullet point

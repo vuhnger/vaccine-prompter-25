@@ -84,7 +84,7 @@ docker run -p 80:80 vaccine-prompter
 The production setup uses nginx to serve the built static files for optimal performance.
 
 ### Docker Commands Summary
-
+docker-compose --profile prod up --build
 | Command | Description |
 |---------|-------------|
 | `docker-compose --profile dev up` | Development with hot reload |

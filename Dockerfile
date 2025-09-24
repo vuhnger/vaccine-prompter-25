@@ -1,5 +1,5 @@
 # Use Node.js 18 Alpine for smaller image size
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY bun.lockb* ./
 
-# Install dependencies
-RUN npm ci --only=production --ignore-scripts
+# Install all dependencies (including devDependencies needed for build)
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY . .

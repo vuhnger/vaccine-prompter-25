@@ -93,8 +93,8 @@ export class ImageService {
         const qrSize = Math.round(canvas.width * 0.16); // Double the previous size (was 0.08 radius * 1.6)
         
         // Calculate QR position (top-left corner) from center coordinates
-        const qrX = qrCenterX - (qrSize / 2);
-        const qrY = qrCenterY - (qrSize / 2);
+        const qrX = qrCenterX - (qrSize / 2); // Move left by half the QR size
+        const qrY = qrCenterY - (qrSize / 2); // Move up by half the QR size
         
         // No circular mask needed for cleaned templates - direct placement
         const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);

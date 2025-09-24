@@ -8,6 +8,13 @@ const templateAssets = import.meta.glob('../assets/templates/*', { eager: true, 
 const cleanedTemplateAssets = import.meta.glob('../assets/templates/cleaned_templates/*', { eager: true, as: 'url' }) as Record<string, string>;
 
 function getTemplateUrl(fileName: string): string {
+  // Check if this is a cleaned template
+  if (fileName.startsWith('cleaned_templates/')) {
+    const cleanFileName = fileName.replace('cleaned_templates/', '');
+    return getCleanedTemplateUrl(cleanFileName);
+  }
+  
+  // Original template logic
   for (const [path, url] of Object.entries(templateAssets)) {
     if (path.endsWith('/' + fileName)) return url as string;
   }

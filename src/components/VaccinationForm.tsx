@@ -24,7 +24,7 @@ const formSchema = z.object({
   klokkeslett: z.string().min(3, 'Klokkeslett er påkrevd'),
   includeTime: z.boolean().default(true),
   bookinglink: z.string().url('Må være en gyldig URL'),
-  alternativ: z.enum(['1', '2', '3', '4'], {
+  alternativ: z.enum(['1', '2', '3', '4', '5', '6'], {
     required_error: 'Du må velge et alternativ',
   }),
 });
@@ -292,6 +292,12 @@ export function VaccinationForm() {
                             </SelectItem>
                             <SelectItem value="4">
                               Alt 4 - Kun influensa, ansatte betaler selv
+                            </SelectItem>
+                            <SelectItem value="5">
+                              Alt 5 - TEST: Cleaned Template 1
+                            </SelectItem>
+                            <SelectItem value="6">
+                              Alt 6 - TEST: Cleaned Template 2
                             </SelectItem>
                           </SelectContent>
                         </Select>

@@ -6,7 +6,7 @@ export interface VaccinationFormData {
   klokkeslett: string;
   includeTime: boolean;
   bookinglink: string;
-  alternativ: '1' | '2' | '3' | '4';
+  alternativ: '1' | '2' | '3' | '4' | '5' | '6';
 }
 
 export interface AlternativeConfig {
@@ -74,6 +74,32 @@ export const ALTERNATIVE_CONFIGS: Record<string, AlternativeConfig> = {
       en: 'Versjon_4_eng_new.svg'
     },
     internalPosterTemplate: 'BedriftensNavn_Plakat_-_Til_å_ha_med_på_oppdrag_ikke_sende_betale_selv.png',
+    includeBoostrix: false
+  },
+  '5': {
+    emailTextModification: 'remove_boostrix',
+    paymentMethod: {
+      no: 'Influensavaksinen er gratis for deg, kostnaden dekkes av arbeidsgiver.',
+      en: 'The flu shot is free for you, it is paid by your employer.'
+    },
+    posterTemplate: {
+      no: 'cleaned_templates/Eksisterende kunder - vaksinert.png',
+      en: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png'
+    },
+    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert.png',
+    includeBoostrix: false
+  },
+  '6': {
+    emailTextModification: 'remove_boostrix',
+    paymentMethod: {
+      no: 'Test alternativ for rene templates',
+      en: 'Test alternative for clean templates'
+    },
+    posterTemplate: {
+      no: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png',
+      en: 'cleaned_templates/Eksisterende kunder - vaksinert.png'
+    },
+    internalPosterTemplate: 'cleaned_templates/Eksisterende kunder - vaksinert (1).png',
     includeBoostrix: false
   }
 };

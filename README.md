@@ -14,102 +14,97 @@ Simply visit the [Lovable Project](https://lovable.dev/projects/1507ea50-6f3f-48
 
 Changes made via Lovable will be committed automatically to this repo.
 
-**Use your preferred IDE**
+## Local Development Setup
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
+- **Node.js** (v18 or higher) - [Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **npm** or **bun** (package manager)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Quick Start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone the repository
+git clone https://github.com/vuhnger/vaccine-prompter-25.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Navigate to project directory
+cd vaccine-prompter-25
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Install dependencies
+npm install
+# or if you have bun installed:
+# bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Start development server
 npm run dev
+# or with bun:
+# bun run dev
+
+# 5. Open your browser
+# Navigate to http://localhost:5173
 ```
 
-## Running with Docker
+The development server will start with hot reload - any changes you make to the code will automatically refresh the browser.
 
-You can also run this project using Docker, which provides a consistent environment across different systems.
+## Alternative: Running with Docker
 
-### Prerequisites for Docker
-- Docker installed on your system
-- Docker Compose (usually included with Docker Desktop)
+If you prefer containerized development or want to test production builds:
 
-### Docker Development Setup
-
-**Option 1: Using Docker Compose (Recommended for development)**
+### Docker Development (with hot reload)
 ```sh
-# Start development server with hot reload
+# Start development server in Docker
 docker-compose --profile dev up
 
-# Or for alternative hot reload setup
+# Or with alternative hot reload setup
 docker-compose --profile dev-hot up
 ```
 
-**Option 2: Using Docker directly**
+### Docker Production Build
 ```sh
-# Build the development image
-docker build --target build -t vaccine-prompter-dev .
-
-# Run development container
-docker run -p 5173:5173 -v $(pwd):/app vaccine-prompter-dev npm run dev
-```
-
-### Docker Production Setup
-
-**Using Docker Compose:**
-```sh
-# Build and run production version
+# Build and test production version locally
 docker-compose --profile prod up --build
+
+# Access at http://localhost (port 80)
 ```
 
-**Using Docker directly:**
-```sh
-# Build production image
-docker build -t vaccine-prompter .
+## When to Use What?
 
-# Run production container
-docker run -p 80:80 vaccine-prompter
-```
+| Method | Best For |
+|--------|----------|
+| **npm run dev** | 🏃‍♂️ Daily development (fastest, easiest debugging) |
+| **Docker dev** | 👥 Team consistency, testing containerization |
+| **Docker prod** | 🚀 Testing production builds before deployment |
 
-The production setup uses nginx to serve the built static files for optimal performance.
+## Available Development Scripts
 
-### Docker Commands Summary
-docker-compose --profile prod up --build
 | Command | Description |
 |---------|-------------|
-| `docker-compose --profile dev up` | Development with hot reload |
-| `docker-compose --profile prod up` | Production build |
-| `docker-compose down` | Stop and remove containers |
-| `docker-compose logs` | View container logs |
+| `npm run dev` | Start development server with hot reload at http://localhost:5173 |
+| `npm run build` | Build for production |
+| `npm run build:dev` | Build in development mode |
+| `npm run lint` | Run ESLint for code linting |
+| `npm run preview` | Preview the production build locally |
 
-## Available Scripts
+💡 **Tip**: Use `npm run dev` for daily development work - it's the fastest way to see your changes!
 
-From your `package.json`, you have these available commands:
+## Project Technologies
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run build:dev` - Build in development mode
-- `npm run lint` - Run ESLint for code linting
-- `npm run preview` - Preview the production build locally
+This project is built with modern web technologies:
 
-## Docker vs npm/bun
+- **⚡ Vite** - Fast build tool and development server
+- **⚛️ React 18** - UI library with hooks and modern patterns  
+- **📘 TypeScript** - Type-safe JavaScript
+- **🎨 Tailwind CSS** - Utility-first CSS framework
+- **🧩 shadcn/ui** - Beautiful, accessible component library
+- **📋 React Hook Form** - Performant forms with validation
+- **🔍 Zod** - Schema validation
+- **📄 PDF-lib** - PDF generation and manipulation
+- **📱 QR Code generation** - Dynamic QR code creation
 
-- **Use npm/bun** for quick local development and when working with Lovable
-- **Use Docker** for:
-  - Consistent environments across team members
-  - Production-like testing
-  - Deployment to container platforms
-  - When you need isolated dependencies
+## Working with Lovable
+
+- **Lovable Sync**: Changes pushed to this repo automatically sync with your [Lovable project](https://lovable.dev/projects/1507ea50-6f3f-4812-ab2d-7fb092f3f01a)
+- **Local Development**: Work locally with your favorite IDE, push changes to see them in Lovable
+- **Docker Deployment**: Lovable will automatically use Docker for production builds when you push this code
 
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.
@@ -128,10 +123,12 @@ From your `package.json`, you have these available commands:
 This project is built with:
 
 - Vite
-- TypeScript
+- TypeScript  
 - React
 - shadcn-ui
 - Tailwind CSS
+
+*See the [Project Technologies](#project-technologies) section above for detailed information.*
 
 ## How can I deploy this project?
 

@@ -90,11 +90,13 @@ export class ImageService {
         // Center of QR code should be at x=930, y=1590
         const qrCenterX = 930;
         const qrCenterY = 1590;
-        const qrSize = Math.round(canvas.width * 0.16); // Double the previous size (was 0.08 radius * 1.6)
+        const qrSize = Math.round(canvas.width * 0.32); // Double again (was 0.16, now 0.32)
         
         // Calculate QR position (top-left corner) from center coordinates
-        const qrX = qrCenterX - (qrSize / 2); // Move left by half the QR size
-        const qrY = qrCenterY - (qrSize / 2); // Move up by half the QR size
+        // Currently lower-left is at (930, 1590), we want center at (930, 1590)
+        // So we need to move right by qrSize/2 and up by qrSize/2
+        const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
+        const qrY = qrCenterY - (qrSize / 2); // Move up by half size from center
         
         // No circular mask needed for cleaned templates - direct placement
         const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);

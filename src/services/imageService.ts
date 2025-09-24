@@ -118,7 +118,24 @@ export class ImageService {
       
       // MASK AND REPLACE DATE TEXT - like editing text layer in Photoshop
       // Find exact coordinates where date appears in bullet point
-      if (templatePath.includes('Versjon_4_eng_new.png')) {
+      if (templatePath.includes('cleaned_templates/')) {
+        // Cleaned templates - place date under "Vi kommer til din arbeidsplass" text
+        // Assuming the workplace text is in the middle section of the poster
+        const dateX = Math.round(canvas.width * 0.1); // 10% from left edge
+        const dateY = Math.round(canvas.height * 0.6); // 60% down from top (under workplace text)
+        const maskWidth = Math.round(canvas.width * 0.4); // Wide enough for date text
+        const maskHeight = Math.round(canvas.height * 0.05); // Height for text
+        
+        // Mask area where we'll place the date (assuming light background)
+        ctx.fillStyle = '#FFFFFF'; // White background mask
+        ctx.fillRect(dateX, dateY - maskHeight + 10, maskWidth, maskHeight);
+        
+        // Place date text under workplace text
+        ctx.fillStyle = '#333333'; // Dark text color for visibility
+        ctx.font = 'bold 24px Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(dateText, dateX, dateY);
+      } else if (templatePath.includes('Versjon_4_eng_new.png')) {
         // New Canva template - replace "date" text in the bullet point
         // Position where "date" appears after "We will be at your workplace"
         ctx.fillStyle = '#4a5d5a'; // Background color to mask existing "date" text

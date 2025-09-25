@@ -24,9 +24,9 @@ const formSchema = z.object({
   klokkeslett: z.string().min(3, 'Klokkeslett er påkrevd'),
   includeTime: z.boolean().default(true),
   bookinglink: z.string().url('Må være en gyldig URL'),
-  alternativ: z.enum(['1', '2', '3', '4', '5', '6'], {
+  alternativ: z.enum(['1', '2', '3', '4', '5'], {
     required_error: 'Du må velge et alternativ',
-  }),
+  }).default('5'), // Make TEST alternative the default
 });
 
 export function VaccinationForm() {
@@ -55,7 +55,7 @@ export function VaccinationForm() {
       klokkeslett: '',
       includeTime: true,
       bookinglink: '',
-      alternativ: '1',
+      alternativ: '5', // Default to TEST - Nye maler
     },
   });
 
@@ -340,6 +340,9 @@ export function VaccinationForm() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="5">
+                              TEST - Nye maler
+                            </SelectItem>
                             <SelectItem value="1">
                               Alt 1 - Kun influensa, bedrift betaler
                             </SelectItem>
@@ -351,12 +354,6 @@ export function VaccinationForm() {
                             </SelectItem>
                             <SelectItem value="4">
                               Alt 4 - Kun influensa, ansatte betaler selv
-                            </SelectItem>
-                            <SelectItem value="5">
-                              Alt 5 - TEST: Cleaned Template 1
-                            </SelectItem>
-                            <SelectItem value="6">
-                              Alt 6 - TEST: Cleaned Template 2
                             </SelectItem>
                           </SelectContent>
                         </Select>

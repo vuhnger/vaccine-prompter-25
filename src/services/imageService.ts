@@ -120,7 +120,7 @@ export class ImageService {
       } else if (templatePath.toLowerCase().includes('graphic')) {
         // Graphic templates - place date CENTERED and 2/3 down the image
         const dateX = Math.round(canvas.width * 0.5); // Center horizontally
-        const dateY = Math.round(canvas.height * 0.665); // 0.5% down from 66% (0.66 + 0.005)
+        const dateY = Math.round(canvas.height * 0.665) - 4; // 0.5% down from 66% minus 4 pixels total
         
         // Place date text centered with black text
         ctx.fillStyle = '#000000'; // Black text for graphic templates
@@ -128,13 +128,13 @@ export class ImageService {
         ctx.textAlign = 'center'; // Center alignment for graphic templates
         ctx.fillText(dateText, dateX, dateY);
       } else if (templatePath.toLowerCase().includes('booking')) {
-        // Booking templates - place date in UPPER LEFT CORNER with black text
-        const dateX = Math.round(canvas.width * 0.05); // Near left edge
-        const dateY = Math.round(canvas.height * 0.05); // 2% lower (0.03 + 0.02)
+        // Booking templates - place date 4/5ths down and adjusted further left with black text
+        const dateX = Math.round(canvas.width * 0.053); // 2% more to the right (0.033 + 0.02)
+        const dateY = Math.round(canvas.height * 0.8) + 3; // 4/5ths down + 3 pixels
         
-        // Place date text in upper left corner with black text
+        // Place date text with black text
         ctx.fillStyle = '#000000'; // Black text for booking templates
-        ctx.font = 'bold 45px Montserrat, sans-serif'; // 5% larger (43px * 1.05)
+        ctx.font = 'bold 40px Montserrat, sans-serif'; // 10% smaller (45px * 0.9 = 40.5px ≈ 40px)
         ctx.textAlign = 'left';
         ctx.fillText(dateText, dateX, dateY);
       } else {

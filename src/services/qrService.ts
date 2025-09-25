@@ -1,14 +1,14 @@
 import QRCode from 'qrcode';
 
 export class QRService {
-  static async generateQRCodeDataURL(text: string, size = 512): Promise<string> {
+  static async generateQRCodeDataURL(text: string, size = 512, backgroundColor = '#FFFFFF'): Promise<string> {
     try {
       return await QRCode.toDataURL(text, {
         width: size,
         margin: 0,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
+          light: backgroundColor
         }
       });
     } catch (error) {
@@ -17,7 +17,7 @@ export class QRService {
     }
   }
 
-  static async generateQRCodeCanvas(text: string, size = 512): Promise<HTMLCanvasElement> {
+  static async generateQRCodeCanvas(text: string, size = 512, backgroundColor = '#FFFFFF'): Promise<HTMLCanvasElement> {
     const canvas = document.createElement('canvas');
     try {
       await QRCode.toCanvas(canvas, text, {
@@ -25,7 +25,7 @@ export class QRService {
         margin: 0,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
+          light: backgroundColor
         }
       });
       return canvas;

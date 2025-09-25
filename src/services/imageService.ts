@@ -107,8 +107,9 @@ export class ImageService {
       const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
       const qrY = qrCenterY - (qrSize / 2); // Move up by half size from center
       
-      // Direct placement for all templates
-      const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize);
+      // Generate QR code with custom background for graphic templates
+      const qrBackgroundColor = templatePath.toLowerCase().includes('graphic') ? '#75D1C6' : '#FFFFFF';
+      const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize, qrBackgroundColor);
       ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
       
       // MASK AND REPLACE DATE TEXT - like editing text layer in Photoshop

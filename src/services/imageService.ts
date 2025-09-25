@@ -86,9 +86,22 @@ export class ImageService {
       
       // Handle different templates with specific positioning
       // Always add QR code in the same place for all images
-      const qrCenterX = Math.round(canvas.width * 0.75); 
-      const qrCenterY = Math.round(canvas.height * 0.85); 
-      const qrSize = Math.round(canvas.width * 0.4); 
+      let qrCenterX, qrCenterY;
+      if (templatePath.toLowerCase().includes('graphic')) {
+        qrCenterX = Math.round(canvas.width * 0.80); // 5% right (0.75 + 0.05)
+        qrCenterY = Math.round(canvas.height * 0.87); // 2% down from 85% (0.85 + 0.02)
+      } else {
+        qrCenterX = Math.round(canvas.width * 0.75); 
+        qrCenterY = Math.round(canvas.height * 0.85);
+      }
+      
+      // Adjust QR size based on template type
+      let qrSize;
+      if (templatePath.toLowerCase().includes('graphic')) {
+        qrSize = Math.round(canvas.width * 0.4 * 0.75); // 3/4ths of current size for graphic templates
+      } else {
+        qrSize = Math.round(canvas.width * 0.4); // Standard size for all other templates
+      }
 
       // Calculate QR position (top-left corner) from center coordinates
       const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
@@ -103,6 +116,16 @@ export class ImageService {
       if (templatePath.toLowerCase().includes('mission')) {
         // Mission templates - no date text at all, just QR code
         // Do nothing, skip date text completely
+      } else if (templatePath.toLowerCase().includes('graphic')) {
+        // Graphic templates - place date CENTERED and 2/3 down the image
+        const dateX = Math.round(canvas.width * 0.5); // Center horizontally
+        const dateY = Math.round(canvas.height * 0.665); // 0.5% down from 66% (0.66 + 0.005)
+        
+        // Place date text centered with black text
+        ctx.fillStyle = '#000000'; // Black text for graphic templates
+        ctx.font = 'bold 50px Montserrat, sans-serif'; // 10% larger (45px * 1.1 ≈ 50px)
+        ctx.textAlign = 'center'; // Center alignment for graphic templates
+        ctx.fillText(dateText, dateX, dateY);
       } else if (templatePath.toLowerCase().includes('booking')) {
         // Booking templates - place date in UPPER LEFT CORNER with black text
         const dateX = Math.round(canvas.width * 0.05); // Near left edge
@@ -110,7 +133,7 @@ export class ImageService {
         
         // Place date text in upper left corner with black text
         ctx.fillStyle = '#000000'; // Black text for booking templates
-        ctx.font = 'bold 45px Arial, sans-serif'; // 5% larger (43px * 1.05)
+        ctx.font = 'bold 45px Montserrat, sans-serif'; // 5% larger (43px * 1.05)
         ctx.textAlign = 'left';
         ctx.fillText(dateText, dateX, dateY);
       } else {
@@ -120,7 +143,7 @@ export class ImageService {
         
         // Place date text with white color for non-booking templates
         ctx.fillStyle = '#FFFFFF'; // White text to match other bullet points
-        ctx.font = 'bold 45px Arial, sans-serif'; // 5% larger (43px * 1.05)
+        ctx.font = 'bold 45px Montserrat, sans-serif'; // 5% larger (43px * 1.05)
         ctx.textAlign = 'left';
         ctx.fillText(dateText, dateX, dateY);
       }

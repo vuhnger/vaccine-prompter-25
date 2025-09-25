@@ -37,6 +37,7 @@ export function VaccinationForm() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [previewImages, setPreviewImages] = useState<Array<{ name: string; url: string }>>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
 
   // Cleanup preview images when component unmounts
   useEffect(() => {
@@ -59,6 +60,29 @@ export function VaccinationForm() {
     },
   });
 
+  const handleGenerate = async () => {
+    // Trigger form validation
+    const isValid = await form.trigger();
+    
+    if (!isValid) {
+      toast.error('Fyll ut alle påkrevde felter', {
+        description: 'Røde felter må fylles ut før generering'
+      });
+      return;
+    }
+
+    // Check if any images are selected
+    if (selectedImages.size === 0) {
+      toast.error('Velg minst ett bilde', {
+        description: 'Du må velge hvilke bilder som skal inkluderes i nedlastingen'
+      });
+      return;
+    }
+    
+    const values = form.getValues();
+    onSubmit(values);
+  };
+
   const onSubmit = async (values: VaccinationFormData) => {
     setIsGenerating(true);
     
@@ -73,8 +97,8 @@ export function VaccinationForm() {
       setGeneratedEmail(emailContent);
       setGeneratedEmailHTML(emailHTML);
       
-      // Create file package
-      await FileService.createCompanyFolder(values);
+      // Create file package with selected images
+      await FileService.createSelectedCompanyFolder(values, Array.from(selectedImages));
       
       toast.success('Materiale generert!', {
         description: `Mappe for ${values.bedriftensNavn} er klar for nedlasting`
@@ -91,6 +115,21 @@ export function VaccinationForm() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handlePreview = async () => {
+    // Trigger form validation
+    const isValid = await form.trigger();
+    
+    if (!isValid) {
+      toast.error('Fyll ut alle påkrevde felter', {
+        description: 'Røde felter må fylles ut før forhåndsvisning'
+      });
+      return;
+    }
+    
+    const values = form.getValues();
+    onPreview(values);
   };
 
   const onPreview = async (values: VaccinationFormData) => {
@@ -117,6 +156,8 @@ export function VaccinationForm() {
       console.log('Object URLs created:', imageUrls);
       
       setPreviewImages(imageUrls);
+      // Select all images by default
+      setSelectedImages(new Set(imageUrls.map(img => img.name)));
       setShowPreview(true);
       
       toast.success('Forhåndsvisning klar!');
@@ -140,6 +181,25 @@ export function VaccinationForm() {
     } finally {
       setIsPreviewing(false);
     }
+  };
+
+  // Image selection functions
+  const toggleImageSelection = (imageName: string) => {
+    const newSelected = new Set(selectedImages);
+    if (newSelected.has(imageName)) {
+      newSelected.delete(imageName);
+    } else {
+      newSelected.add(imageName);
+    }
+    setSelectedImages(newSelected);
+  };
+
+  const selectAllImages = () => {
+    setSelectedImages(new Set(previewImages.map(img => img.name)));
+  };
+
+  const deselectAllImages = () => {
+    setSelectedImages(new Set());
   };
 
   // Demo data fill function
@@ -206,7 +266,7 @@ export function VaccinationForm() {
             </CardHeader>
             <CardContent className="p-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -368,10 +428,7 @@ export function VaccinationForm() {
                   <div className="space-y-3">
                     <Button 
                       type="button"
-                      onClick={() => {
-                        const values = form.getValues();
-                        onPreview(values);
-                      }}
+                      onClick={handlePreview}
                       disabled={isPreviewing || isGenerating}
                       className="w-full h-12 text-lg font-semibold"
                       size="lg"
@@ -391,7 +448,8 @@ export function VaccinationForm() {
                     </Button>
 
                     <Button 
-                      type="submit" 
+                      type="button"
+                      onClick={handleGenerate}
                       disabled={isGenerating || isPreviewing}
                       className="w-full h-12 text-lg font-semibold"
                       size="lg"
@@ -475,7 +533,6 @@ export function VaccinationForm() {
             </DialogContent>
           </Dialog>
 
-          {/* Image Preview Modal */}
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -484,32 +541,85 @@ export function VaccinationForm() {
                   Forhåndsvisning av genererte bilder
                 </DialogTitle>
                 <DialogDescription>
-                  Her kan du se hvordan plakatene vil se ut før du laster dem ned
+                  Trykk på bildene for å velge hvilke som skal lastes ned
                 </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-6">
-                <div className="flex gap-2">
-                  <Button onClick={() => setShowPreview(false)} variant="default" size="sm">
-                    Lukk forhåndsvisning
-                  </Button>
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-2">
+                    <Button onClick={() => setShowPreview(false)} variant="default" size="sm">
+                      Lukk forhåndsvisning
+                    </Button>
+                    <Button
+                      onClick={handleGenerate}
+                      disabled={selectedImages.size === 0 || isGenerating}
+                      variant="default"
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isGenerating ? 'Laster ned...' : 'Last ned valgte'}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={selectAllImages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Velg alle
+                    </Button>
+                    <Button
+                      onClick={deselectAllImages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Velg ingen
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {previewImages.map((image, index) => (
-                    <Card key={index}>
-                      <CardHeader>
-                        <CardTitle className="text-lg">{image.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <img 
-                          src={image.url} 
-                          alt={`${image.name} forhåndsvisning`}
-                          className="w-full h-auto border rounded-lg shadow-sm"
-                        />
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {previewImages.map((image, index) => {
+                    const isSelected = selectedImages.has(image.name);
+                    return (
+                      <Card 
+                        key={index}
+                        className={`cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:ring-1 hover:ring-gray-300'
+                        }`}
+                        onClick={() => toggleImageSelection(image.name)}
+                      >
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg flex items-center justify-between">
+                            {image.name}
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected 
+                                ? 'bg-blue-500 border-blue-500' 
+                                : 'bg-white border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <img 
+                            src={image.url} 
+                            alt={`${image.name} forhåndsvisning`}
+                            className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                              isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                            }`}
+                          />
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             </DialogContent>

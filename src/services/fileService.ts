@@ -79,6 +79,110 @@ export class FileService {
     }
   }
 
+  static async generateSelectedImages(
+    formData: VaccinationFormData, 
+    selectedImageNames: string[]
+  ): Promise<{
+    images: Array<{ name: string; blob: Blob }>;
+  }> {
+    try {
+      console.log('Generating selected images:', selectedImageNames);
+      
+      const images: Array<{ name: string; blob: Blob }> = [];
+      
+      // Loop through only selected files
+      for (const selectedName of selectedImageNames) {
+        // Find the corresponding template asset
+        let templateUrl: string | null = null;
+        for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+          if (path.endsWith('/' + selectedName)) {
+            templateUrl = url as string;
+            break;
+          }
+        }
+        
+        if (!templateUrl) {
+          console.warn(`Template not found for: ${selectedName}`);
+          continue;
+        }
+        
+        // Determine which date to use based on language in filename
+        const isEnglish = selectedName.toLowerCase().includes('eng');
+        const dateText = isEnglish ? formData.dateEN : formData.datoNO;
+        
+        try {
+          const blob = await ImageService.createPosterWithQRAndDate(
+            templateUrl,
+            formData.bookinglink,
+            dateText,
+            isEnglish
+          );
+          
+          images.push({
+            name: selectedName,
+            blob
+          });
+          
+          console.log(`Successfully processed selected: ${selectedName}`);
+        } catch (error) {
+          console.error(`Failed to process selected ${selectedName}:`, error);
+          // Continue with other files even if one fails
+        }
+      }
+      
+      console.log(`Generated ${images.length} selected images`);
+      
+      return { images };
+      
+    } catch (error) {
+      console.error('Error in generateSelectedImages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error in selected generation';
+      throw new Error(`Failed to generate selected images: ${errorMessage}`);
+    }
+  }
+
+  static async createSelectedCompanyFolder(
+    formData: VaccinationFormData, 
+    selectedImageNames: string[]
+  ): Promise<void> {
+    if (selectedImageNames.length === 0) {
+      throw new Error('Ingen bilder valgt for nedlasting');
+    }
+
+    const zip = new JSZip();
+    const companyFolder = zip.folder(formData.bedriftensNavn);
+    
+    if (!companyFolder) {
+      throw new Error('Failed to create company folder');
+    }
+
+    try {
+      // Generate only selected images
+      const selectedImages = await this.generateSelectedImages(formData, selectedImageNames);
+      
+      // Add selected images to ZIP
+      for (const image of selectedImages.images) {
+        const extension = 'png'; // All our templates are PNG
+        companyFolder.file(`${image.name}`, image.blob);
+      }
+      
+      // Add self-declarations and info sheets (always included)
+      const config = ALTERNATIVE_CONFIGS[formData.alternativ];
+      if (config) {
+        await this.addSelfDeclarations(companyFolder, config.includeBoostrix);
+        await this.addInfoSheets(companyFolder, config.includeBoostrix);
+      }
+      
+      // Generate and download the zip file
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, `${formData.bedriftensNavn}_valgte_bilder.zip`);
+      
+    } catch (error) {
+      console.error('Error creating selected company folder:', error);
+      throw new Error('Failed to create selected vaccination materials package');
+    }
+  }
+
   static async createCompanyFolder(formData: VaccinationFormData): Promise<void> {
     const zip = new JSZip();
     const config = ALTERNATIVE_CONFIGS[formData.alternativ];

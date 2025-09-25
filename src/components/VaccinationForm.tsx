@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { VaccinationFormData } from '../types/vaccination';
 import { FileService } from '../services/fileService';
 import { EmailService } from '../services/emailService';
-import { Loader2, Download, Syringe, Copy, Mail } from 'lucide-react';
+import { Loader2, Download, Syringe, Copy, Mail, Eye } from 'lucide-react';
 
 const formSchema = z.object({
   kontaktpersonNavn: z.string().min(2, 'Kontaktperson navn må være minst 2 tegn'),
@@ -31,9 +31,19 @@ const formSchema = z.object({
 
 export function VaccinationForm() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const [generatedEmail, setGeneratedEmail] = useState<string>('');
   const [generatedEmailHTML, setGeneratedEmailHTML] = useState<string>('');
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [previewImages, setPreviewImages] = useState<Array<{ name: string; url: string }>>([]);
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Cleanup preview images when component unmounts
+  useEffect(() => {
+    return () => {
+      previewImages.forEach(image => URL.revokeObjectURL(image.url));
+    };
+  }, [previewImages]);
 
   const form = useForm<VaccinationFormData>({
     resolver: zodResolver(formSchema),
@@ -80,6 +90,55 @@ export function VaccinationForm() {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const onPreview = async (values: VaccinationFormData) => {
+    setIsPreviewing(true);
+    
+    try {
+      toast.info('Genererer forhåndsvisning...', {
+        description: 'Dette kan ta noen sekunder'
+      });
+      
+      console.log('Starting preview generation with values:', values);
+      
+      // Generate preview images
+      const previewBlobs = await FileService.generatePreviewImages(values);
+      
+      console.log('Preview blobs generated:', previewBlobs);
+      
+      // Convert blobs to data URLs for display
+      const imageUrls = previewBlobs.images.map(image => ({
+        name: image.name,
+        url: URL.createObjectURL(image.blob)
+      }));
+      
+      console.log('Object URLs created:', imageUrls);
+      
+      setPreviewImages(imageUrls);
+      setShowPreview(true);
+      
+      toast.success('Forhåndsvisning klar!');
+      
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      
+      // More specific error information
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : '';
+      
+      console.error('Error details:', {
+        message: errorMessage,
+        stack: errorStack,
+        values: values
+      });
+      
+      toast.error('Feil ved forhåndsvisning', {
+        description: `Detaljert feil: ${errorMessage}`
+      });
+    } finally {
+      setIsPreviewing(false);
     }
   };
 
@@ -309,24 +368,50 @@ export function VaccinationForm() {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
-                    disabled={isGenerating}
-                    className="w-full h-12 text-lg font-semibold"
-                    size="lg"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Genererer materiale...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-5 w-5" />
-                        Generer vaksinasjonsmateriale
-                      </>
-                    )}
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        const values = form.getValues();
+                        onPreview(values);
+                      }}
+                      disabled={isPreviewing || isGenerating}
+                      className="w-full h-12 text-lg font-semibold"
+                      size="lg"
+                      variant="outline"
+                    >
+                      {isPreviewing ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Genererer forhåndsvisning...
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="mr-2 h-5 w-5" />
+                          Forhåndsvis bilder
+                        </>
+                      )}
+                    </Button>
+
+                    <Button 
+                      type="submit" 
+                      disabled={isGenerating || isPreviewing}
+                      className="w-full h-12 text-lg font-semibold"
+                      size="lg"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Genererer materiale...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-5 w-5" />
+                          Generer vaksinasjonsmateriale
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
@@ -388,6 +473,46 @@ export function VaccinationForm() {
                       />
                     </CardContent>
                   </Card>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Image Preview Modal */}
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Forhåndsvisning av genererte bilder
+                </DialogTitle>
+                <DialogDescription>
+                  Her kan du se hvordan plakatene vil se ut før du laster dem ned
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowPreview(false)} variant="default" size="sm">
+                    Lukk forhåndsvisning
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {previewImages.map((image, index) => (
+                    <Card key={index}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{image.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <img 
+                          src={image.url} 
+                          alt={`${image.name} forhåndsvisning`}
+                          className="w-full h-auto border rounded-lg shadow-sm"
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             </DialogContent>

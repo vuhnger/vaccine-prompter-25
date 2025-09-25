@@ -29,6 +29,56 @@ function getCleanedTemplateUrl(fileName: string): string {
 }
 
 export class FileService {
+  static async generatePreviewImages(formData: VaccinationFormData): Promise<{
+    images: Array<{ name: string; blob: Blob }>;
+  }> {
+    try {
+      console.log('Generating preview images for all cleaned templates...');
+      
+      const images: Array<{ name: string; blob: Blob }> = [];
+      
+      // Loop through all files in cleaned_templates folder
+      for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+        const fileName = path.split('/').pop();
+        if (!fileName) continue;
+        
+        console.log(`Processing template: ${fileName}`);
+        
+        // Determine which date to use based on language in filename
+        const isEnglish = fileName.toLowerCase().includes('eng');
+        const dateText = isEnglish ? formData.dateEN : formData.datoNO;
+        
+        try {
+          const blob = await ImageService.createPosterWithQRAndDate(
+            url as string,
+            formData.bookinglink,
+            dateText,
+            isEnglish
+          );
+          
+          images.push({
+            name: fileName,
+            blob
+          });
+          
+          console.log(`Successfully processed: ${fileName}`);
+        } catch (error) {
+          console.error(`Failed to process ${fileName}:`, error);
+          // Continue with other files even if one fails
+        }
+      }
+      
+      console.log(`Generated ${images.length} preview images`);
+      
+      return { images };
+      
+    } catch (error) {
+      console.error('Error in generatePreviewImages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error in preview generation';
+      throw new Error(`Failed to generate preview images: ${errorMessage}`);
+    }
+  }
+
   static async createCompanyFolder(formData: VaccinationFormData): Promise<void> {
     const zip = new JSZip();
     const config = ALTERNATIVE_CONFIGS[formData.alternativ];

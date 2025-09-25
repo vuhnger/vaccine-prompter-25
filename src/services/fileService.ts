@@ -30,61 +30,47 @@ function getCleanedTemplateUrl(fileName: string): string {
 
 export class FileService {
   static async generatePreviewImages(formData: VaccinationFormData): Promise<{
-    posterNO: Blob | null;
-    posterEN: Blob | null;
-    internalPoster: Blob | null;
+    images: Array<{ name: string; blob: Blob }>;
   }> {
-    const config = ALTERNATIVE_CONFIGS[formData.alternativ];
-    
-    if (!config) {
-      throw new Error(`No configuration found for alternative: ${formData.alternativ}`);
-    }
-    
-    console.log('Using config:', config);
-    
     try {
-      // Generate main posters (Norwegian and English)
-      console.log('Getting template URLs...');
-      const posterPathNO = getTemplateUrl(config.posterTemplate.no);
-      const posterPathEN = getTemplateUrl(config.posterTemplate.en);
+      console.log('Generating preview images for all cleaned templates...');
       
-      console.log('Template URLs:', { posterPathNO, posterPathEN });
+      const images: Array<{ name: string; blob: Blob }> = [];
       
-      console.log('Generating Norwegian poster...');
-      const posterNO = await ImageService.createPosterWithQRAndDate(
-        posterPathNO,
-        formData.bookinglink,
-        formData.datoNO,
-        false
-      );
+      // Loop through all files in cleaned_templates folder
+      for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+        const fileName = path.split('/').pop();
+        if (!fileName) continue;
+        
+        console.log(`Processing template: ${fileName}`);
+        
+        // Determine which date to use based on language in filename
+        const isEnglish = fileName.toLowerCase().includes('eng');
+        const dateText = isEnglish ? formData.dateEN : formData.datoNO;
+        
+        try {
+          const blob = await ImageService.createPosterWithQRAndDate(
+            url as string,
+            formData.bookinglink,
+            dateText,
+            isEnglish
+          );
+          
+          images.push({
+            name: fileName,
+            blob
+          });
+          
+          console.log(`Successfully processed: ${fileName}`);
+        } catch (error) {
+          console.error(`Failed to process ${fileName}:`, error);
+          // Continue with other files even if one fails
+        }
+      }
       
-      console.log('Generating English poster...');
-      const posterEN = await ImageService.createPosterWithQRAndDate(
-        posterPathEN,
-        formData.bookinglink,
-        formData.dateEN,
-        true
-      );
+      console.log(`Generated ${images.length} preview images`);
       
-      // Generate internal poster
-      console.log('Getting internal template URL...');
-      const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
-      
-      console.log('Internal template URL:', internalPosterPath);
-      
-      console.log('Generating internal poster...');
-      const internalPoster = await ImageService.createInternalPoster(
-        internalPosterPath,
-        formData.bookinglink
-      );
-      
-      console.log('All images generated successfully');
-      
-      return {
-        posterNO,
-        posterEN,
-        internalPoster
-      };
+      return { images };
       
     } catch (error) {
       console.error('Error in generatePreviewImages:', error);

@@ -35,19 +35,13 @@ export function VaccinationForm() {
   const [generatedEmail, setGeneratedEmail] = useState<string>('');
   const [generatedEmailHTML, setGeneratedEmailHTML] = useState<string>('');
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [previewImages, setPreviewImages] = useState<{
-    posterNO: string | null;
-    posterEN: string | null;
-    internalPoster: string | null;
-  }>({ posterNO: null, posterEN: null, internalPoster: null });
+  const [previewImages, setPreviewImages] = useState<Array<{ name: string; url: string }>>([]);
   const [showPreview, setShowPreview] = useState(false);
 
   // Cleanup preview images when component unmounts
   useEffect(() => {
     return () => {
-      if (previewImages.posterNO) URL.revokeObjectURL(previewImages.posterNO);
-      if (previewImages.posterEN) URL.revokeObjectURL(previewImages.posterEN);
-      if (previewImages.internalPoster) URL.revokeObjectURL(previewImages.internalPoster);
+      previewImages.forEach(image => URL.revokeObjectURL(image.url));
     };
   }, [previewImages]);
 
@@ -115,13 +109,14 @@ export function VaccinationForm() {
       console.log('Preview blobs generated:', previewBlobs);
       
       // Convert blobs to data URLs for display
-      const posterNO = previewBlobs.posterNO ? URL.createObjectURL(previewBlobs.posterNO) : null;
-      const posterEN = previewBlobs.posterEN ? URL.createObjectURL(previewBlobs.posterEN) : null;
-      const internalPoster = previewBlobs.internalPoster ? URL.createObjectURL(previewBlobs.internalPoster) : null;
+      const imageUrls = previewBlobs.images.map(image => ({
+        name: image.name,
+        url: URL.createObjectURL(image.blob)
+      }));
       
-      console.log('Object URLs created:', { posterNO, posterEN, internalPoster });
+      console.log('Object URLs created:', imageUrls);
       
-      setPreviewImages({ posterNO, posterEN, internalPoster });
+      setPreviewImages(imageUrls);
       setShowPreview(true);
       
       toast.success('Forhåndsvisning klar!');
@@ -503,54 +498,21 @@ export function VaccinationForm() {
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Norwegian Poster */}
-                  {previewImages.posterNO && (
-                    <Card>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {previewImages.map((image, index) => (
+                    <Card key={index}>
                       <CardHeader>
-                        <CardTitle className="text-lg">Norsk plakat</CardTitle>
+                        <CardTitle className="text-lg">{image.name}</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4">
                         <img 
-                          src={previewImages.posterNO} 
-                          alt="Norsk plakat forhåndsvisning"
+                          src={image.url} 
+                          alt={`${image.name} forhåndsvisning`}
                           className="w-full h-auto border rounded-lg shadow-sm"
                         />
                       </CardContent>
                     </Card>
-                  )}
-
-                  {/* English Poster */}
-                  {previewImages.posterEN && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Engelsk plakat</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <img 
-                          src={previewImages.posterEN} 
-                          alt="Engelsk plakat forhåndsvisning"
-                          className="w-full h-auto border rounded-lg shadow-sm"
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Internal Poster */}
-                  {previewImages.internalPoster && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Intern plakat</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <img 
-                          src={previewImages.internalPoster} 
-                          alt="Intern plakat forhåndsvisning"
-                          className="w-full h-auto border rounded-lg shadow-sm"
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
+                  ))}
                 </div>
               </div>
             </DialogContent>

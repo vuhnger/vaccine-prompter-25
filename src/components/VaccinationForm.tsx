@@ -15,6 +15,7 @@ import { VaccinationFormData } from '../types/vaccination';
 import { FileService } from '../services/fileService';
 import { EmailService } from '../services/emailService';
 import { Loader2, Download, Syringe, Copy, Mail, Eye } from 'lucide-react';
+import DrDLogo from '/src/assets/logos/DrDlogo.png';
 
 const formSchema = z.object({
   kontaktpersonNavn: z.string().min(2, 'Kontaktperson navn må være minst 2 tegn'),
@@ -157,8 +158,14 @@ export function VaccinationForm() {
       console.log('Object URLs created:', imageUrls);
       
       setPreviewImages(imageUrls);
-      // Select all images by default
-      setSelectedImages(new Set(imageUrls.map(img => img.name)));
+      // Select only nographic and mission images by default
+      const defaultSelectedImages = imageUrls
+        .filter(img => 
+          img.name.toLowerCase().includes('nographic') || 
+          img.name.toLowerCase().includes('mission')
+        )
+        .map(img => img.name);
+      setSelectedImages(new Set(defaultSelectedImages));
       setShowPreview(true);
       
       toast.success('Forhåndsvisning klar!');
@@ -244,7 +251,11 @@ export function VaccinationForm() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <Syringe className="h-12 w-12 text-moss-green mr-3" />
+              <img 
+                src={DrDLogo} 
+                alt="Dr. Dropin Logo" 
+                className="h-16 w-auto mr-4"
+              />
               <h1 className="text-4xl font-bold text-moss-green">
                 Vaksinasjonsmateriell Generator
               </h1>
@@ -404,7 +415,7 @@ export function VaccinationForm() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="5">
-                              TEST - Nye maler
+                              Materiell til oppdrag
                             </SelectItem>
                             <SelectItem value="1">
                               Alt 1 - Kun influensa, bedrift betaler

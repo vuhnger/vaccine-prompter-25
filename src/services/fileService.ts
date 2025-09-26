@@ -284,6 +284,7 @@ export class FileService {
   private static async addInformationFilesToRoot(zip: JSZip): Promise<void> {
     console.log('Starting addInformationFilesToRoot...');
     console.log('Available information assets:', Object.keys(informationAssets));
+    console.log('Information assets entries:', Object.entries(informationAssets));
     
     // Use all files from the informationAssets import instead of hardcoded list
     for (const [path, url] of Object.entries(informationAssets)) {
@@ -292,11 +293,37 @@ export class FileService {
       
       try {
         console.log('Processing information file:', fileName);
+        console.log('File path:', path);
         console.log('File URL:', url);
-        const response = await fetch(url as string);
+        
+        // Try to handle URL encoding for special characters
+        const encodedUrl = encodeURI(url as string);
+        console.log('Encoded URL:', encodedUrl);
+        
+        const response = await fetch(encodedUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch ${fileName}: ${response.status} ${response.statusText}`);
+          console.error(`Failed to fetch ${fileName}: ${response.status} ${response.statusText}`);
+          // Try with the original URL as fallback
+          const fallbackResponse = await fetch(url as string);
+          if (!fallbackResponse.ok) {
+            throw new Error(`Failed to fetch ${fileName}: ${fallbackResponse.status} ${fallbackResponse.statusText}`);
+          }
+          console.log('Fallback fetch succeeded for:', fileName);
+          const blob = await fallbackResponse.blob();
+          console.log('File blob size:', blob.size, 'type:', blob.type);
+          
+          // Create user-friendly filename
+          let friendlyName = fileName
+            .replace(/_/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/  +/g, ' ')
+            .trim();
+          
+          console.log('Adding to ZIP as:', friendlyName);
+          zip.file(friendlyName, blob);
+          continue;
         }
+        
         const blob = await response.blob();
         console.log('File blob size:', blob.size, 'type:', blob.type);
         
@@ -311,6 +338,7 @@ export class FileService {
         zip.file(friendlyName, blob);
       } catch (error) {
         console.error(`Could not add information file ${fileName}:`, error);
+        console.error('Error details:', error);
         // Continue with other files
       }
     }

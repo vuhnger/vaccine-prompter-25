@@ -17,13 +17,15 @@ services:
     profiles:
       - dev
 
-  # Production service
+  # Production service (optimized for Lovable.dev)
   app:
     build: .
     ports:
       - "80:80"
     environment:
       - NODE_ENV=production
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    restart: unless-stopped
     profiles:
       - prod
 

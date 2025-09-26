@@ -62,7 +62,7 @@ export function VaccinationForm() {
     },
   });
 
-  const handleGenerate = async () => {
+    const handleSubmit = async () => {
     // Trigger form validation
     const isValid = await form.trigger();
     
@@ -73,14 +73,7 @@ export function VaccinationForm() {
       return;
     }
 
-    // Check if any images are selected
-    if (selectedImages.size === 0) {
-      toast.error('Velg minst ett bilde', {
-        description: 'Du må velge hvilke bilder som skal inkluderes i nedlastingen'
-      });
-      return;
-    }
-    
+    // No need to check for selected images here - we'll use defaults if none selected
     const values = form.getValues();
     onSubmit(values);
   };
@@ -99,8 +92,25 @@ export function VaccinationForm() {
       setGeneratedEmail(emailContent);
       setGeneratedEmailHTML(emailHTML);
       
+      // If no images are selected (no preview was done), use default selection
+      let imagesToGenerate = Array.from(selectedImages);
+      if (imagesToGenerate.length === 0) {
+        // Generate all images first to determine default selection
+        const allImages = await FileService.generatePreviewImages(values);
+        const defaultSelectedImages = allImages.images
+          .filter(img => 
+            img.name.toLowerCase().includes('nographic') || 
+            img.name.toLowerCase().includes('mission')
+          )
+          .map(img => img.name);
+        imagesToGenerate = defaultSelectedImages;
+        
+        // Update the selected images state for consistency
+        setSelectedImages(new Set(defaultSelectedImages));
+      }
+      
       // Create file package with selected images
-      await FileService.createSelectedCompanyFolder(values, Array.from(selectedImages));
+      await FileService.createSelectedCompanyFolder(values, imagesToGenerate);
       
       toast.success('Materiale generert!', {
         description: `Mappe for ${values.bedriftensNavn} er klar for nedlasting`
@@ -269,7 +279,8 @@ export function VaccinationForm() {
             <CardHeader className="bg-gradient-to-r from-light-mint to-mint/30 border-b border-moss-green/10">
               <CardTitle className="text-2xl text-moss-green">Bedriftsinformasjon</CardTitle>
               <CardDescription className="text-moss-green/70">
-                Fyll ut informasjonen for å generere tilpassede plakater, e-post og dokumenter
+                Fyll ut informasjonen for å generere tilpassede plakater, e-post og dokumenter. 
+                Standard pakke inkluderer nographic- og mission-varianter. Bruk forhåndsvisning for å velge spesifikke filer.
               </CardDescription>
               <Button 
                 type="button" 
@@ -462,7 +473,7 @@ export function VaccinationForm() {
 
                     <Button 
                       type="button"
-                      onClick={handleGenerate}
+                      onClick={handleSubmit}
                       disabled={isGenerating || isPreviewing}
                       className="w-full h-12 text-lg font-semibold bg-moss-green text-white hover:bg-moss-green/90"
                       size="lg"
@@ -565,7 +576,7 @@ export function VaccinationForm() {
                       Lukk forhåndsvisning
                     </Button>
                     <Button
-                      onClick={handleGenerate}
+                      onClick={handleSubmit}
                       disabled={selectedImages.size === 0 || isGenerating}
                       size="sm"
                       className="bg-moss-green text-white hover:bg-moss-green/90"

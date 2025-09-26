@@ -34,9 +34,7 @@ Applikasjonen er hostet på Lovable.dev og tilgjengelig på:
 - **Styling**: Tailwind CSS
 - **UI Components**: Radix UI
 - **Form Handling**: React Hook Form med Zod validering
-- **File Processing**: Canvas API for bildegenerering
 - **QR Code**: qrcode library
-- **PDF Handling**: PDF-lib
 - **Deployment**: Docker + Nginx
 
 ### Sikkerhet

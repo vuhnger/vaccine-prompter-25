@@ -48,6 +48,7 @@ export function VaccinationForm() {
 
   const form = useForm<VaccinationFormData>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange', // Enable real-time validation
     defaultValues: {
       kontaktpersonNavn: '',
       bedriftensNavn: '',
@@ -203,7 +204,7 @@ export function VaccinationForm() {
   };
 
   // Demo data fill function
-  const fillDemoData = () => {
+  const fillDemoData = async () => {
     form.setValue('kontaktpersonNavn', 'Kari Nordmann');
     form.setValue('bedriftensNavn', 'Fjell & Fjord AS');
     form.setValue('datoNO', '21. oktober 2025');
@@ -212,6 +213,11 @@ export function VaccinationForm() {
     form.setValue('includeTime', true);
     form.setValue('bookinglink', 'https://pasientsky.no/booking/fjell-fjord-21-10');
     form.setValue('alternativ', '3');
+    
+    // Clear validation errors after filling demo data
+    form.clearErrors();
+    // Alternatively, trigger validation to show fields are now valid
+    await form.trigger();
   };
 
   const copyEmailToClipboard = async () => {
@@ -233,25 +239,25 @@ export function VaccinationForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10">
+    <div className="min-h-screen bg-gradient-to-br from-light-mint via-background to-mint/20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <Syringe className="h-12 w-12 text-primary mr-3" />
-              <h1 className="text-4xl font-bold text-foreground">
+              <Syringe className="h-12 w-12 text-moss-green mr-3" />
+              <h1 className="text-4xl font-bold text-moss-green">
                 Vaksinasjonsmateriell Generator
               </h1>
             </div>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-moss-green/70">
               Generer komplette materialpakker for bedriftsvaksinering
             </p>
           </div>
 
-          <Card className="shadow-xl border-border/50 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border/50">
-              <CardTitle className="text-2xl text-foreground">Bedriftsinformasjon</CardTitle>
-              <CardDescription className="text-muted-foreground">
+          <Card className="shadow-xl border-moss-green/20 backdrop-blur-sm bg-white/90">
+            <CardHeader className="bg-gradient-to-r from-light-mint to-mint/30 border-b border-moss-green/10">
+              <CardTitle className="text-2xl text-moss-green">Bedriftsinformasjon</CardTitle>
+              <CardDescription className="text-moss-green/70">
                 Fyll ut informasjonen for å generere tilpassede plakater, e-post og dokumenter
               </CardDescription>
               <Button 
@@ -259,7 +265,7 @@ export function VaccinationForm() {
                 variant="secondary" 
                 size="sm"
                 onClick={fillDemoData}
-                className="w-fit mt-2"
+                className="w-fit mt-2 bg-mint text-moss-green hover:bg-mint/80"
               >
                 Fyll demo-data
               </Button>
@@ -275,7 +281,7 @@ export function VaccinationForm() {
                         <FormItem>
                           <FormLabel>Kontaktperson Navn</FormLabel>
                           <FormControl>
-                            <Input placeholder="Kari Nordmann" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -289,7 +295,7 @@ export function VaccinationForm() {
                         <FormItem>
                           <FormLabel>Bedriftens Navn</FormLabel>
                           <FormControl>
-                            <Input placeholder="Fjell & Fjord AS" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -305,7 +311,7 @@ export function VaccinationForm() {
                         <FormItem>
                           <FormLabel>Dato (Norsk)</FormLabel>
                           <FormControl>
-                            <Input placeholder="21. oktober 2025" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -319,7 +325,7 @@ export function VaccinationForm() {
                         <FormItem>
                           <FormLabel>Date (English)</FormLabel>
                           <FormControl>
-                            <Input placeholder="October 21st, 2025" {...field} />
+                            <Input {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -334,7 +340,7 @@ export function VaccinationForm() {
                       <FormItem>
                         <FormLabel>Klokkeslett</FormLabel>
                         <FormControl>
-                          <Input placeholder="09:00–11:30" {...field} />
+                          <Input {...field} />
                         </FormControl>
                         <FormDescription>
                           Tidsrommet for vaksinering
@@ -374,10 +380,7 @@ export function VaccinationForm() {
                       <FormItem>
                         <FormLabel>Bookinglink</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="https://pasientsky.no/booking/fjell-fjord-21-10" 
-                            {...field} 
-                          />
+                          <Input {...field} />
                         </FormControl>
                         <FormDescription>
                           URL som brukes for QR-kode generering
@@ -430,9 +433,8 @@ export function VaccinationForm() {
                       type="button"
                       onClick={handlePreview}
                       disabled={isPreviewing || isGenerating}
-                      className="w-full h-12 text-lg font-semibold"
+                      className="w-full h-12 text-lg font-semibold bg-mint text-moss-green hover:bg-mint/80"
                       size="lg"
-                      variant="outline"
                     >
                       {isPreviewing ? (
                         <>
@@ -442,7 +444,7 @@ export function VaccinationForm() {
                       ) : (
                         <>
                           <Eye className="mr-2 h-5 w-5" />
-                          Forhåndsvis bilder
+                          Forhåndsvis og velg plakater
                         </>
                       )}
                     </Button>
@@ -451,7 +453,7 @@ export function VaccinationForm() {
                       type="button"
                       onClick={handleGenerate}
                       disabled={isGenerating || isPreviewing}
-                      className="w-full h-12 text-lg font-semibold"
+                      className="w-full h-12 text-lg font-semibold bg-moss-green text-white hover:bg-moss-green/90"
                       size="lg"
                     >
                       {isGenerating ? (
@@ -462,7 +464,7 @@ export function VaccinationForm() {
                       ) : (
                         <>
                           <Download className="mr-2 h-5 w-5" />
-                          Generer vaksinasjonsmateriale
+                          Last ned vaksinasjonsmateriale
                         </>
                       )}
                     </Button>
@@ -487,15 +489,15 @@ export function VaccinationForm() {
               
               <div className="space-y-4">
                 <div className="flex gap-2">
-                  <Button onClick={copyEmailToClipboard} variant="outline" size="sm">
+                  <Button onClick={copyEmailToClipboard} variant="outline" size="sm" className="border-mint text-mint hover:bg-mint hover:text-moss-green">
                     <Copy className="mr-2 h-4 w-4" />
                     Kopier tekst-versjon
                   </Button>
-                  <Button onClick={copyHTMLToClipboard} variant="outline" size="sm">
+                  <Button onClick={copyHTMLToClipboard} variant="outline" size="sm" className="border-mint text-mint hover:bg-mint hover:text-moss-green">
                     <Copy className="mr-2 h-4 w-4" />
                     Kopier HTML-versjon
                   </Button>
-                  <Button onClick={() => setShowEmailModal(false)} variant="default" size="sm">
+                  <Button onClick={() => setShowEmailModal(false)} className="bg-light-mint text-moss-green hover:bg-light-mint/80" size="sm">
                     Lukk
                   </Button>
                 </div>
@@ -548,15 +550,14 @@ export function VaccinationForm() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <div className="flex gap-2">
-                    <Button onClick={() => setShowPreview(false)} variant="default" size="sm">
+                    <Button onClick={() => setShowPreview(false)} className="bg-light-mint text-moss-green hover:bg-light-mint/80" size="sm">
                       Lukk forhåndsvisning
                     </Button>
                     <Button
                       onClick={handleGenerate}
                       disabled={selectedImages.size === 0 || isGenerating}
-                      variant="default"
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-moss-green text-white hover:bg-moss-green/90"
                     >
                       {isGenerating ? 'Laster ned...' : 'Last ned valgte'}
                     </Button>
@@ -566,6 +567,7 @@ export function VaccinationForm() {
                       onClick={selectAllImages}
                       variant="outline"
                       size="sm"
+                      className="border-mint text-mint hover:bg-mint hover:text-moss-green"
                     >
                       Velg alle
                     </Button>
@@ -573,53 +575,224 @@ export function VaccinationForm() {
                       onClick={deselectAllImages}
                       variant="outline"
                       size="sm"
+                      className="border-mint text-mint hover:bg-mint hover:text-moss-green"
                     >
                       Velg ingen
                     </Button>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {previewImages.map((image, index) => {
-                    const isSelected = selectedImages.has(image.name);
-                    return (
-                      <Card 
-                        key={index}
-                        className={`cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'ring-2 ring-blue-500 bg-blue-50' 
-                            : 'hover:ring-1 hover:ring-gray-300'
-                        }`}
-                        onClick={() => toggleImageSelection(image.name)}
-                      >
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg flex items-center justify-between">
-                            {image.name}
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              isSelected 
-                                ? 'bg-blue-500 border-blue-500' 
-                                : 'bg-white border-gray-300'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <img 
-                            src={image.url} 
-                            alt={`${image.name} forhåndsvisning`}
-                            className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
-                              isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
-                            }`}
-                          />
-                        </CardContent>
-                      </Card>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Mission Files Column */}
+                  {(() => {
+                    const missionImages = previewImages.filter(image => 
+                      image.name.toLowerCase().includes('mission')
                     );
-                  })}
+                    return missionImages.length > 0 ? (
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-center border-b pb-2">Til oppdrag</h4>
+                        {missionImages.map((image, index) => {
+                          const isSelected = selectedImages.has(image.name);
+                          return (
+                            <Card 
+                              key={`mission-${index}`}
+                              className={`cursor-pointer transition-all ${
+                                isSelected 
+                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                  : 'hover:ring-1 hover:ring-gray-300'
+                              }`}
+                              onClick={() => toggleImageSelection(image.name)}
+                            >
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-xs flex items-center justify-between">
+                                  {image.name}
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    isSelected 
+                                      ? 'bg-blue-500 border-blue-500' 
+                                      : 'bg-white border-gray-300'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-2 pt-0">
+                                <img 
+                                  src={image.url} 
+                                  alt={`${image.name} forhåndsvisning`}
+                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                                  }`}
+                                />
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Graphic Files Column */}
+                  {(() => {
+                    const graphicImages = previewImages.filter(image => 
+                      image.name.toLowerCase().includes('graphic') && 
+                      !image.name.toLowerCase().includes('nographic')
+                    );
+                    return graphicImages.length > 0 ? (
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-center border-b pb-2">Med grafikk</h4>
+                        {graphicImages.map((image, index) => {
+                          const isSelected = selectedImages.has(image.name)
+                          return (
+                            <Card 
+                              key={`graphic-${index}`}
+                              className={`cursor-pointer transition-all ${
+                                isSelected 
+                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                  : 'hover:ring-1 hover:ring-gray-300'
+                              }`}
+                              onClick={() => toggleImageSelection(image.name)}
+                            >
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-xs flex items-center justify-between">
+                                  {image.name}
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    isSelected 
+                                      ? 'bg-blue-500 border-blue-500' 
+                                      : 'bg-white border-gray-300'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-2 pt-0">
+                                <img 
+                                  src={image.url} 
+                                  alt={`${image.name} forhåndsvisning`}
+                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                                  }`}
+                                />
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* No-Graphic Files Column */}
+                  {(() => {
+                    const noGraphicImages = previewImages.filter(image => 
+                      image.name.toLowerCase().includes('nographic')
+                    );
+                    return noGraphicImages.length > 0 ? (
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-center border-b pb-2">Uten grafikk</h4>
+                        {noGraphicImages.map((image, index) => {
+                          const isSelected = selectedImages.has(image.name);
+                          return (
+                            <Card 
+                              key={`nographic-${index}`}
+                              className={`cursor-pointer transition-all ${
+                                isSelected 
+                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                  : 'hover:ring-1 hover:ring-gray-300'
+                              }`}
+                              onClick={() => toggleImageSelection(image.name)}
+                            >
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-xs flex items-center justify-between">
+                                  {image.name}
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    isSelected 
+                                      ? 'bg-blue-500 border-blue-500' 
+                                      : 'bg-white border-gray-300'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-2 pt-0">
+                                <img 
+                                  src={image.url} 
+                                  alt={`${image.name} forhåndsvisning`}
+                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                                  }`}
+                                />
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Other Files Column */}
+                  {(() => {
+                    const otherImages = previewImages.filter(image => 
+                      !image.name.toLowerCase().includes('graphic') && 
+                      !image.name.toLowerCase().includes('nographic') &&
+                      !image.name.toLowerCase().includes('mission')
+                    );
+                    return otherImages.length > 0 ? (
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg text-center border-b pb-2">Øvrig</h4>
+                        {otherImages.map((image, index) => {
+                          const isSelected = selectedImages.has(image.name);
+                          return (
+                            <Card 
+                              key={`other-${index}`}
+                              className={`cursor-pointer transition-all ${
+                                isSelected 
+                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                  : 'hover:ring-1 hover:ring-gray-300'
+                              }`}
+                              onClick={() => toggleImageSelection(image.name)}
+                            >
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-xs flex items-center justify-between">
+                                  {image.name}
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    isSelected 
+                                      ? 'bg-blue-500 border-blue-500' 
+                                      : 'bg-white border-gray-300'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-2 pt-0">
+                                <img 
+                                  src={image.url} 
+                                  alt={`${image.name} forhåndsvisning`}
+                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                                  }`}
+                                />
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </DialogContent>

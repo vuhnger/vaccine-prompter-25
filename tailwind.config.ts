@@ -17,6 +17,11 @@ export default {
         'montserrat': ['Montserrat', 'sans-serif'],
       },
       colors: {
+        // Custom moss green and mint palette
+        'moss-green': '#2E4F4E',
+        'light-mint': '#D6E8E5',
+        'mint': '#75D1C6',
+        
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

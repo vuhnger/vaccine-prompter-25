@@ -6,7 +6,7 @@ En komplett løsning for å generere tilpassede vaksinasjonsmaterialer for bedri
 
 Applikasjonen er hostet på Lovable.dev og tilgjengelig på:
 
-[DrD BHT Vaksinasjonsmateriell Generator](https://lovable.dev/projects/9b5f7adc-bdbf-4f16-9767-0a87a3daae90)
+[DrD BHT Vaksinasjonsmateriell Generator](https://preview--vaccine-prompter-25.lovable.app/)
 
 ## 📋 Funksjonalitet
 

@@ -56,7 +56,7 @@ Applikasjonen er hostet på Lovable.dev og tilgjengelig på:
 
 1. **Klon prosjektet**
 ```bash
-git clone [repository-url]
+git clone git@github.com:vuhnger/vaccine-prompter-25.git
 cd vaccine-prompter-25
 ```
 
@@ -70,7 +70,7 @@ npm install
 npm run dev
 ```
 
-Applikasjonen kjører på `http://localhost:8080` (automatisk HTTPS hvis SSL-sertifikater er tilgjengelig).
+Applikasjonen kjører lokalt på `http://localhost:8080` (automatisk HTTPS hvis SSL-sertifikater er tilgjengelig).
 
 ### SSL for Lokal Utvikling (Valgfritt)
 
@@ -173,15 +173,15 @@ vaccine-prompter-25/
 
 ### Lovable.dev (Anbefalt)
 
-Prosjektet er automatisk deployet på Lovable.dev. Endringer pushes automatisk ved commit til main branch:
+Prosjektet er automatisk deployert på Lovable.dev. Endringer pushes automatisk ved commit til main branch:
 
 ```bash
 git add .
-git commit -m "Dine endringer"
+git commit -m "Beskrivelse av dine endringer"
 git push
 ```
 
-### Manuel Deployment
+### Manuell Deployment
 
 For deployment til andre tjenester, bruk Docker-containeren:
 

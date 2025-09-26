@@ -84,31 +84,20 @@ export class ImageService {
       // Calculate exact position where QR code exists in template
       let circleRadius, circleCenterX, circleCenterY;
       
-      // Handle different templates with specific positioning
+      // QR code positioning like original "nographic" templates
       // Always add QR code in the same place for all images
-      let qrCenterX, qrCenterY;
-      if (templatePath.toLowerCase().includes('graphic')) {
-        qrCenterX = Math.round(canvas.width * 0.80); // 5% right (0.75 + 0.05)
-        qrCenterY = Math.round(canvas.height * 0.87); // 2% down from 85% (0.85 + 0.02)
-      } else {
-        qrCenterX = Math.round(canvas.width * 0.75); 
-        qrCenterY = Math.round(canvas.height * 0.85);
-      }
+      const qrCenterX = Math.round(canvas.width * 0.80); // More to the right (5% right of old position)
+      const qrCenterY = Math.round(canvas.height * 0.87); // Slightly lower (2% down from old position)
       
-      // Adjust QR size based on template type
-      let qrSize;
-      if (templatePath.toLowerCase().includes('graphic')) {
-        qrSize = Math.round(canvas.width * 0.4 * 0.75); // 3/4ths of current size for graphic templates
-      } else {
-        qrSize = Math.round(canvas.width * 0.4); // Standard size for all other templates
-      }
+      // Smaller QR size like original nographic templates
+      const qrSize = Math.round(canvas.width * 0.4 * 0.75); // 3/4ths of standard size
 
       // Calculate QR position (top-left corner) from center coordinates
       const qrX = qrCenterX - (qrSize / 2); // Move left by half size from center
       const qrY = qrCenterY - (qrSize / 2); // Move up by half size from center
       
-      // Generate QR code with custom background for graphic templates
-      const qrBackgroundColor = templatePath.toLowerCase().includes('graphic') ? '#75D1C6' : '#FFFFFF';
+      // Generate QR code with mint green background like original nographic templates
+      const qrBackgroundColor = '#75D1C6';
       const qrCanvas = await QRService.generateQRCodeCanvas(qrText, qrSize, qrBackgroundColor);
       ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
       

@@ -1,48 +1,103 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { VaccinationFormData, ALTERNATIVE_CONFIGS } from '../types/vaccination';
+import { VaccinationFormData } from '../types/vaccination';
 import { ImageService } from './imageService';
 
 // Ensure all template assets are included in the bundle and retrievable by filename
-const templateAssets = import.meta.glob('../assets/templates/*', { eager: true, as: 'url' }) as Record<string, string>;
-const cleanedTemplateAssets = import.meta.glob('../assets/templates/cleaned_templates/*', { eager: true, as: 'url' }) as Record<string, string>;
+const templateAssets = import.meta.glob('../assets/templates/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const informationAssets = import.meta.glob('../assets/information/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const alt1TemplateAssets = import.meta.glob('../assets/templates/alt1/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const alt2TemplateAssets = import.meta.glob('../assets/templates/alt2/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const alt3TemplateAssets = import.meta.glob('../assets/templates/alt3/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const alt4TemplateAssets = import.meta.glob('../assets/templates/alt4/*', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 
 function getTemplateUrl(fileName: string): string {
-  // Check if this is a cleaned template
-  if (fileName.startsWith('cleaned_templates/')) {
-    const cleanFileName = fileName.replace('cleaned_templates/', '');
-    return getCleanedTemplateUrl(cleanFileName);
-  }
-  
-  // Original template logic
   for (const [path, url] of Object.entries(templateAssets)) {
     if (path.endsWith('/' + fileName)) return url as string;
   }
   throw new Error(`Template asset not found: ${fileName}`);
 }
 
-function getCleanedTemplateUrl(fileName: string): string {
-  for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+function getInformationUrl(fileName: string): string {
+  for (const [path, url] of Object.entries(informationAssets)) {
     if (path.endsWith('/' + fileName)) return url as string;
   }
-  throw new Error(`Cleaned template asset not found: ${fileName}`);
+  throw new Error(`Information asset not found: ${fileName}`);
+}
+
+function getAltTemplateUrl(fileName: string, alt: string): string {
+  let altAssets: Record<string, string>;
+  switch (alt) {
+    case '1':
+      altAssets = alt1TemplateAssets;
+      break;
+    case '2':
+      altAssets = alt2TemplateAssets;
+      break;
+    case '3':
+      altAssets = alt3TemplateAssets;
+      break;
+    case '4':
+      altAssets = alt4TemplateAssets;
+      break;
+    default:
+      throw new Error(`Invalid alternative: ${alt}`);
+  }
+  
+  for (const [path, url] of Object.entries(altAssets)) {
+    if (path.endsWith('/' + fileName)) return url as string;
+  }
+  throw new Error(`Alternative template asset not found: ${fileName} for alt ${alt}`);
+}
+
+function getAltTemplateAssets(alt: string): Record<string, string> {
+  switch (alt) {
+    case '1':
+      return alt1TemplateAssets;
+    case '2':
+      return alt2TemplateAssets;
+    case '3':
+      return alt3TemplateAssets;
+    case '4':
+      return alt4TemplateAssets;
+    default:
+      throw new Error(`Invalid alternative: ${alt}`);
+  }
+}
+
+function generateUserFriendlyFilename(originalFileName: string, companyName: string): string {
+  const fileName = originalFileName.toLowerCase();
+  
+  // Determine language
+  const isEnglish = fileName.startsWith('eng_');
+  const language = isEnglish ? 'engelsk' : 'norsk';
+  
+  // Determine poster type
+  const isMission = fileName.includes('mission');
+  const posterType = isMission ? 'Oppdrag' : 'Bookingplakat';
+  
+  // Generate user-friendly name
+  return `${companyName} - ${posterType} (${language})`;
 }
 
 export class FileService {
   static async generatePreviewImages(formData: VaccinationFormData): Promise<{
-    images: Array<{ name: string; blob: Blob }>;
+    images: Array<{ name: string; originalName: string; blob: Blob }>;
   }> {
     try {
-      console.log('Generating preview images for all cleaned templates...');
+      console.log(`Generating preview images for alternative ${formData.alternativ} (includes mission templates)...`);
       
-      const images: Array<{ name: string; blob: Blob }> = [];
+      const images: Array<{ name: string; originalName: string; blob: Blob }> = [];
       
-      // Loop through all files in cleaned_templates folder
-      for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+      // Get the alternative-specific templates
+      const altAssets = getAltTemplateAssets(formData.alternativ);
+      
+      // Process alternative-specific templates
+      for (const [path, url] of Object.entries(altAssets)) {
         const fileName = path.split('/').pop();
         if (!fileName) continue;
         
-        console.log(`Processing template: ${fileName}`);
+        console.log(`Processing alternative ${formData.alternativ} template: ${fileName}`);
         
         // Determine which date to use based on language in filename
         const isEnglish = fileName.toLowerCase().includes('eng');
@@ -57,7 +112,8 @@ export class FileService {
           );
           
           images.push({
-            name: fileName,
+            name: generateUserFriendlyFilename(fileName, formData.bedriftensNavn),
+            originalName: fileName,
             blob
           });
           
@@ -90,11 +146,16 @@ export class FileService {
       
       const images: Array<{ name: string; blob: Blob }> = [];
       
+      // Get the alternative-specific templates
+      const altAssets = getAltTemplateAssets(formData.alternativ);
+      
       // Loop through only selected files
       for (const selectedName of selectedImageNames) {
         // Find the corresponding template asset
         let templateUrl: string | null = null;
-        for (const [path, url] of Object.entries(cleanedTemplateAssets)) {
+        
+        // Check alternative templates first
+        for (const [path, url] of Object.entries(altAssets)) {
           if (path.endsWith('/' + selectedName)) {
             templateUrl = url as string;
             break;
@@ -119,7 +180,7 @@ export class FileService {
           );
           
           images.push({
-            name: selectedName,
+            name: generateUserFriendlyFilename(selectedName, formData.bedriftensNavn),
             blob
           });
           
@@ -141,175 +202,133 @@ export class FileService {
     }
   }
 
-  static async createSelectedCompanyFolder(
-    formData: VaccinationFormData, 
-    selectedImageNames: string[]
+  static async downloadSelectedImages(
+    formData: VaccinationFormData,
+    selectedImageNames: string[] = []
   ): Promise<void> {
+    console.log('Starting downloadSelectedImages with:', selectedImageNames);
     const zip = new JSZip();
-    const companyFolder = zip.folder(formData.bedriftensNavn);
-    
-    if (!companyFolder) {
-      throw new Error('Failed to create company folder');
-    }
 
     try {
-      // If no images selected, use default selection (nographic and mission images)
+      // If no images selected, use default selection (all alternative images)
       let imagesToGenerate = selectedImageNames;
       if (imagesToGenerate.length === 0) {
+        console.log('No images selected, generating all images...');
         // Generate all images to determine defaults
         const allImages = await this.generatePreviewImages(formData);
-        imagesToGenerate = allImages.images
-          .filter(img => 
-            img.name.toLowerCase().includes('nographic') || 
-            img.name.toLowerCase().includes('mission')
-          )
-          .map(img => img.name);
+        // Default selection is ALL files from selected alternative
+        imagesToGenerate = allImages.images.map(img => img.name);
+        console.log('Default images to generate:', imagesToGenerate);
       }
 
+      console.log('Generating selected images...');
       // Generate only selected/default images
       const selectedImages = await this.generateSelectedImages(formData, imagesToGenerate);
+      console.log('Selected images generated:', selectedImages.images.length);
       
-      // Add selected images to ZIP
+      // Add selected images directly to ZIP root
       for (const image of selectedImages.images) {
-        const extension = 'png'; // All our templates are PNG
-        companyFolder.file(`${image.name}`, image.blob);
+        console.log('Adding selected image to ZIP:', image.name);
+        zip.file(`${image.name}.png`, image.blob);
       }
       
-      // Add self-declarations and info sheets (always included)
-      const config = ALTERNATIVE_CONFIGS[formData.alternativ];
-      if (config) {
-        await this.addSelfDeclarations(companyFolder, config.includeBoostrix);
-        await this.addInfoSheets(companyFolder, config.includeBoostrix);
-      }
+      console.log('Adding information files...');
+      // Add all information files directly to ZIP root
+      await this.addInformationFilesToRoot(zip);
       
+      console.log('Generating ZIP file...');
       // Generate and download the zip file
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `${formData.bedriftensNavn}_valgte_bilder.zip`);
+      console.log('ZIP generated successfully, downloading...');
+      saveAs(content, `${formData.bedriftensNavn}_vaksinasjonsmateriale.zip`);
       
     } catch (error) {
-      console.error('Error creating selected company folder:', error);
-      throw new Error('Failed to create selected vaccination materials package');
+      console.error('Detailed error in downloadSelectedImages:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      throw new Error(`Failed to create selected vaccination materials package: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   static async createCompanyFolder(formData: VaccinationFormData): Promise<void> {
+    console.log('Starting createCompanyFolder with formData:', formData);
     const zip = new JSZip();
-    const config = ALTERNATIVE_CONFIGS[formData.alternativ];
-    const companyFolder = zip.folder(formData.bedriftensNavn);
-    const internalFolder = zip.folder(`${formData.bedriftensNavn}2025`);
-    
-    // Create additional folder for cleaned template outputs
-    const isCleanedTemplate = config.posterTemplate.no.startsWith('cleaned_templates/') || 
-                               config.posterTemplate.en.startsWith('cleaned_templates/');
-    const cleanedFolder = isCleanedTemplate ? 
-      zip.folder(`${formData.bedriftensNavn}_CleanedTemplates`) : null;
-    
-    if (!companyFolder || !internalFolder) {
-      throw new Error('Failed to create folders');
-    }
 
     try {
-      // Generate main posters (Norwegian and English)
-      const posterPathNO = getTemplateUrl(config.posterTemplate.no);
-      const posterPathEN = getTemplateUrl(config.posterTemplate.en);
+      console.log('Generating preview images...');
+      // Generate all images from selected alternative
+      const allImages = await this.generatePreviewImages(formData);
+      console.log('Generated images:', allImages.images.length);
       
-      const posterNO = await ImageService.createPosterWithQRAndDate(
-        posterPathNO,
-        formData.bookinglink,
-        formData.datoNO,
-        false
-      );
-      
-      const posterEN = await ImageService.createPosterWithQRAndDate(
-        posterPathEN,
-        formData.bookinglink,
-        formData.dateEN,
-        true
-      );
-      
-      // Determine file extensions based on template type
-      const extensionNO = config.posterTemplate.no.endsWith('.pdf') ? 'pdf' : 
-                          config.posterTemplate.no.endsWith('.svg') ? 'svg' : 'png';
-      const extensionEN = config.posterTemplate.en.endsWith('.pdf') ? 'pdf' : 
-                          config.posterTemplate.en.endsWith('.svg') ? 'svg' : 'png';
-      
-      // Place files in appropriate folders
-      if (isCleanedTemplate && cleanedFolder) {
-        // Place cleaned template outputs in special folder
-        cleanedFolder.file(`Bookingplakat - ${formData.bedriftensNavn}.${extensionNO}`, posterNO);
-        cleanedFolder.file(`Bookingplakat - ${formData.bedriftensNavn}(eng).${extensionEN}`, posterEN);
-        
-        // Also generate internal poster in cleaned folder if using cleaned templates
-        const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
-        const internalPoster = await ImageService.createInternalPoster(
-          internalPosterPath,
-          formData.bookinglink
-        );
-        cleanedFolder.file(`${formData.bedriftensNavn} – intern plakat 2025.png`, internalPoster);
-      } else {
-        // Original folder structure for existing templates
-        companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}.${extensionNO}`, posterNO);
-        companyFolder.file(`Bookingplakat - ${formData.bedriftensNavn}(eng).${extensionEN}`, posterEN);
-        
-        // Generate internal poster
-        const internalPosterPath = getTemplateUrl(config.internalPosterTemplate);
-        const internalPoster = await ImageService.createInternalPoster(
-          internalPosterPath,
-          formData.bookinglink
-        );
-        
-        internalFolder.file(`${formData.bedriftensNavn} – intern plakat 2025.png`, internalPoster);
+      // Add generated images directly to ZIP root
+      for (const image of allImages.images) {
+        console.log('Adding image to ZIP:', image.name);
+        zip.file(`${image.name}.png`, image.blob);
       }
       
-      // Add self-declarations based on alternative
-      await this.addSelfDeclarations(companyFolder, config.includeBoostrix);
+      console.log('Adding information files...');
+      // Add all information files directly to ZIP root
+      await this.addInformationFilesToRoot(zip);
       
-      // Add info sheets based on alternative
-      await this.addInfoSheets(companyFolder, config.includeBoostrix);
-      
+      console.log('Generating ZIP file...');
       // Generate and download the zip file
       const content = await zip.generateAsync({ type: 'blob' });
+      console.log('ZIP generated successfully, downloading...');
       saveAs(content, `${formData.bedriftensNavn}_vaksinasjonsmateriale.zip`);
       
     } catch (error) {
-      console.error('Error creating company folder:', error);
-      throw new Error('Failed to create vaccination materials package');
+      console.error('Detailed error in createCompanyFolder:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      throw new Error(`Failed to create vaccination materials package: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
-  
-  private static async addSelfDeclarations(folder: JSZip, includeBoostrix: boolean): Promise<void> {
-    // Always include influenza declarations
-    const influenzaNO = await fetch(getTemplateUrl('Egenerklæring_Influensavaksine.pdf'));
-    const influenzaEN = await fetch(getTemplateUrl('Egenerklæring_Influensavaksine_eng.pdf'));
-    
-    folder.file('Egenerklæring Influensavaksine.pdf', await influenzaNO.blob());
-    folder.file('Egenerklæring Influensavaksine(eng).pdf', await influenzaEN.blob());
-    
-    // Add Boostrix Polio declarations if needed (Alt 2 & 3)
-    if (includeBoostrix) {
-      const boostrixNO = await fetch(getTemplateUrl('Egenerklæring_Boostrix_Polio.pdf'));
-      const boostrixEN = await fetch(getTemplateUrl('Egenerklæring_Boostrix_Polio_eng.pdf'));
-      
-      folder.file('Egenerklæring Boostrix Polio.pdf', await boostrixNO.blob());
-      folder.file('Egenerklæring Boostrix Polio(eng).pdf', await boostrixEN.blob());
+
+  private static async addInformationFilesToRoot(zip: JSZip): Promise<void> {
+    console.log('Starting addInformationFilesToRoot...');
+    // Add all files from the information folder directly to ZIP root
+    const informationFiles = [
+      'Boostrix_Polio_-_Infoskriv.png',
+      'Boostrix_Polio_-_Infoskriv_eng.png',
+      'Egenerklæring_Boostrix_Polio.pdf',
+      'Egenerklæring_Boostrix_Polio_eng.pdf',
+      'Egenerklæring_Influensavaksine.pdf',
+      'Egenerklæring_Influensavaksine_eng.pdf',
+      'Influensa_-_Infoskriv.png',
+      'Influensa_-_Infoskriv_eng.png'
+    ];
+    console.log('Information files to add:', informationFiles.length);
+
+    for (const fileName of informationFiles) {
+      try {
+        console.log('Processing information file:', fileName);
+        const fileUrl = getInformationUrl(fileName);
+        console.log('File URL:', fileUrl);
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${fileName}: ${response.status} ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        console.log('File blob size:', blob.size);
+        
+        // Create user-friendly filename
+        let friendlyName = fileName
+          .replace(/_/g, ' ')
+          .replace(/-/g, ' ')
+          .replace(/  +/g, ' ')
+          .trim();
+        
+        console.log('Adding to ZIP as:', friendlyName);
+        zip.file(friendlyName, blob);
+      } catch (error) {
+        console.error(`Could not add information file ${fileName}:`, error);
+        // Continue with other files
+      }
     }
-  }
-  
-  private static async addInfoSheets(folder: JSZip, includeBoostrix: boolean): Promise<void> {
-    // Always include influenza info sheets
-    const influenzaNO = await fetch(getTemplateUrl('Influensa_-_Infoskriv.png'));
-    const influenzaEN = await fetch(getTemplateUrl('Influensa_-_Infoskriv_eng.png'));
-    
-    folder.file('Influensa - Infoskriv.png', await influenzaNO.blob());
-    folder.file('Influensa - Infoskriv(eng).png', await influenzaEN.blob());
-    
-    // Add Boostrix Polio info sheets if needed (Alt 2 & 3)
-    if (includeBoostrix) {
-      const boostrixNO = await fetch(getTemplateUrl('Boostrix_Polio_-_Infoskriv.png'));
-      const boostrixEN = await fetch(getTemplateUrl('Boostrix_Polio_-_Infoskriv_eng.png'));
-      
-      folder.file('Boostrix Polio - Infoskriv.png', await boostrixNO.blob());
-      folder.file('Boostrix Polio - Infoskriv(eng).png', await boostrixEN.blob());
-    }
+    console.log('Finished adding information files');
   }
 }

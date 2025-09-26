@@ -25,9 +25,9 @@ const formSchema = z.object({
   klokkeslett: z.string().min(3, 'Klokkeslett er påkrevd'),
   includeTime: z.boolean().default(true),
   bookinglink: z.string().url('Må være en gyldig URL'),
-  alternativ: z.enum(['1', '2', '3', '4', '5'], {
+  alternativ: z.enum(['1', '2', '3', '4'], {
     required_error: 'Du må velge et alternativ',
-  }).default('5'), // Make TEST alternative the default
+  }).default('1'), // Make Alt 1 the default
 });
 
 export function VaccinationForm() {
@@ -39,6 +39,7 @@ export function VaccinationForm() {
   const [previewImages, setPreviewImages] = useState<Array<{ name: string; url: string }>>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [nameMapping, setNameMapping] = useState<Map<string, string>>(new Map()); // displayName -> originalName
 
   // Cleanup preview images when component unmounts
   useEffect(() => {
@@ -58,7 +59,7 @@ export function VaccinationForm() {
       klokkeslett: '',
       includeTime: true,
       bookinglink: '',
-      alternativ: '5', // Default to TEST - Nye maler
+      alternativ: '1', // Default to Alt 1
     },
   });
 
@@ -97,20 +98,22 @@ export function VaccinationForm() {
       if (imagesToGenerate.length === 0) {
         // Generate all images first to determine default selection
         const allImages = await FileService.generatePreviewImages(values);
-        const defaultSelectedImages = allImages.images
-          .filter(img => 
-            img.name.toLowerCase().includes('nographic') || 
-            img.name.toLowerCase().includes('mission')
-          )
-          .map(img => img.name);
+        // Default selection is ALL files (mission + selected alternative) - use original names
+        const defaultSelectedImages = allImages.images.map(img => img.originalName);
         imagesToGenerate = defaultSelectedImages;
         
         // Update the selected images state for consistency
         setSelectedImages(new Set(defaultSelectedImages));
+      } else {
+        // Convert display names to original names using the mapping
+        imagesToGenerate = imagesToGenerate.map(displayName => {
+          const originalName = nameMapping.get(displayName);
+          return originalName || displayName; // fallback to displayName if mapping not found
+        });
       }
       
       // Create file package with selected images
-      await FileService.createSelectedCompanyFolder(values, imagesToGenerate);
+      await FileService.downloadSelectedImages(values, imagesToGenerate);
       
       toast.success('Materiale generert!', {
         description: `Mappe for ${values.bedriftensNavn} er klar for nedlasting`
@@ -159,22 +162,24 @@ export function VaccinationForm() {
       
       console.log('Preview blobs generated:', previewBlobs);
       
-      // Convert blobs to data URLs for display
+      // Convert blobs to data URLs for display and create name mapping
       const imageUrls = previewBlobs.images.map(image => ({
-        name: image.name,
+        name: image.name, // user-friendly name for display
         url: URL.createObjectURL(image.blob)
       }));
+      
+      // Create mapping from display names to original names
+      const mapping = new Map<string, string>();
+      previewBlobs.images.forEach(image => {
+        mapping.set(image.name, image.originalName);
+      });
+      setNameMapping(mapping);
       
       console.log('Object URLs created:', imageUrls);
       
       setPreviewImages(imageUrls);
-      // Select only nographic and mission images by default
-      const defaultSelectedImages = imageUrls
-        .filter(img => 
-          img.name.toLowerCase().includes('nographic') || 
-          img.name.toLowerCase().includes('mission')
-        )
-        .map(img => img.name);
+      // Select ALL images by default (mission + selected alternative)
+      const defaultSelectedImages = imageUrls.map(img => img.name);
       setSelectedImages(new Set(defaultSelectedImages));
       setShowPreview(true);
       
@@ -229,7 +234,7 @@ export function VaccinationForm() {
     form.setValue('klokkeslett', '09:00–11:30');
     form.setValue('includeTime', true);
     form.setValue('bookinglink', 'https://pasientsky.no/booking/fjell-fjord-21-10');
-    form.setValue('alternativ', '3');
+    form.setValue('alternativ', '1');
     
     // Clear validation errors after filling demo data
     form.clearErrors();
@@ -280,7 +285,7 @@ export function VaccinationForm() {
               <CardTitle className="text-2xl text-moss-green">Bedriftsinformasjon</CardTitle>
               <CardDescription className="text-moss-green/70">
                 Fyll ut informasjonen for å generere tilpassede plakater, e-post og dokumenter. 
-                Standard pakke inkluderer nographic- og mission-varianter. Bruk forhåndsvisning for å velge spesifikke filer.
+                Standard pakke inkluderer plakater for valgt alternativ og mission-varianter. Bruk forhåndsvisning for å velge spesifikke filer.
               </CardDescription>
               <Button 
                 type="button" 
@@ -425,9 +430,6 @@ export function VaccinationForm() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="5">
-                              Materiell til oppdrag
-                            </SelectItem>
                             <SelectItem value="1">
                               Alt 1 - Kun influensa, bedrift betaler
                             </SelectItem>
@@ -604,222 +606,66 @@ export function VaccinationForm() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  {/* Mission Files Column */}
-                  {(() => {
-                    const missionImages = previewImages.filter(image => 
-                      image.name.toLowerCase().includes('mission')
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {previewImages.map((image, index) => {
+                    const isSelected = selectedImages.has(image.name);
+                    return (
+                      <Card 
+                        key={`preview-${index}`}
+                        className={`cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'ring-2 ring-blue-500 bg-blue-50' 
+                            : 'hover:ring-1 hover:ring-gray-300'
+                        }`}
+                        onClick={() => toggleImageSelection(image.name)}
+                      >
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-xs flex items-center justify-between">
+                            {image.name}
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                              isSelected 
+                                ? 'bg-blue-500 border-blue-500' 
+                                : 'bg-white border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 pt-0">
+                          <img 
+                            src={image.url} 
+                            alt={`${image.name} forhåndsvisning`}
+                            className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                              isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
+                            }`}
+                          />
+                        </CardContent>
+                      </Card>
                     );
-                    return missionImages.length > 0 ? (
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-center border-b pb-2">Til oppdrag</h4>
-                        {missionImages.map((image, index) => {
-                          const isSelected = selectedImages.has(image.name);
-                          return (
-                            <Card 
-                              key={`mission-${index}`}
-                              className={`cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                  : 'hover:ring-1 hover:ring-gray-300'
-                              }`}
-                              onClick={() => toggleImageSelection(image.name)}
-                            >
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-xs flex items-center justify-between">
-                                  {image.name}
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected 
-                                      ? 'bg-blue-500 border-blue-500' 
-                                      : 'bg-white border-gray-300'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="p-2 pt-0">
-                                <img 
-                                  src={image.url} 
-                                  alt={`${image.name} forhåndsvisning`}
-                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
-                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
-                                  }`}
-                                />
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : null;
-                  })()}
-
-                  {/* Graphic Files Column */}
-                  {(() => {
-                    const graphicImages = previewImages.filter(image => 
-                      image.name.toLowerCase().includes('graphic') && 
-                      !image.name.toLowerCase().includes('nographic')
-                    );
-                    return graphicImages.length > 0 ? (
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-center border-b pb-2">Med grafikk</h4>
-                        {graphicImages.map((image, index) => {
-                          const isSelected = selectedImages.has(image.name)
-                          return (
-                            <Card 
-                              key={`graphic-${index}`}
-                              className={`cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                  : 'hover:ring-1 hover:ring-gray-300'
-                              }`}
-                              onClick={() => toggleImageSelection(image.name)}
-                            >
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-xs flex items-center justify-between">
-                                  {image.name}
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected 
-                                      ? 'bg-blue-500 border-blue-500' 
-                                      : 'bg-white border-gray-300'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="p-2 pt-0">
-                                <img 
-                                  src={image.url} 
-                                  alt={`${image.name} forhåndsvisning`}
-                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
-                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
-                                  }`}
-                                />
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : null;
-                  })()}
-
-                  {/* No-Graphic Files Column */}
-                  {(() => {
-                    const noGraphicImages = previewImages.filter(image => 
-                      image.name.toLowerCase().includes('nographic')
-                    );
-                    return noGraphicImages.length > 0 ? (
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-center border-b pb-2">Uten grafikk</h4>
-                        {noGraphicImages.map((image, index) => {
-                          const isSelected = selectedImages.has(image.name);
-                          return (
-                            <Card 
-                              key={`nographic-${index}`}
-                              className={`cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                  : 'hover:ring-1 hover:ring-gray-300'
-                              }`}
-                              onClick={() => toggleImageSelection(image.name)}
-                            >
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-xs flex items-center justify-between">
-                                  {image.name}
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected 
-                                      ? 'bg-blue-500 border-blue-500' 
-                                      : 'bg-white border-gray-300'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="p-2 pt-0">
-                                <img 
-                                  src={image.url} 
-                                  alt={`${image.name} forhåndsvisning`}
-                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
-                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
-                                  }`}
-                                />
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : null;
-                  })()}
-
-                  {/* Other Files Column */}
-                  {(() => {
-                    const otherImages = previewImages.filter(image => 
-                      !image.name.toLowerCase().includes('graphic') && 
-                      !image.name.toLowerCase().includes('nographic') &&
-                      !image.name.toLowerCase().includes('mission')
-                    );
-                    return otherImages.length > 0 ? (
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-lg text-center border-b pb-2">Øvrig</h4>
-                        {otherImages.map((image, index) => {
-                          const isSelected = selectedImages.has(image.name);
-                          return (
-                            <Card 
-                              key={`other-${index}`}
-                              className={`cursor-pointer transition-all ${
-                                isSelected 
-                                  ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                  : 'hover:ring-1 hover:ring-gray-300'
-                              }`}
-                              onClick={() => toggleImageSelection(image.name)}
-                            >
-                              <CardHeader className="pb-2">
-                                <CardTitle className="text-xs flex items-center justify-between">
-                                  {image.name}
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected 
-                                      ? 'bg-blue-500 border-blue-500' 
-                                      : 'bg-white border-gray-300'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="p-2 pt-0">
-                                <img 
-                                  src={image.url} 
-                                  alt={`${image.name} forhåndsvisning`}
-                                  className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
-                                    isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
-                                  }`}
-                                />
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    ) : null;
-                  })()}
+                  })}
                 </div>
               </div>
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-gray-200 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="text-center text-sm text-gray-600 space-y-2">
+              <div className="font-semibold">© 2025 DR.DROPIN BHT AS - Alle rettigheter forbeholdt</div>
+              <div>Organisasjonsnummer: 927 103 036</div>
+              <div>Sørkedalsveien 8A, 0369 Oslo, Norge</div>
+              <div className="text-xs mt-4 text-gray-500">
+                Vaksinasjonsmateriell Generator - Utviklet for bedriftsvaksinering
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

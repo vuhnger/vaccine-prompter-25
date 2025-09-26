@@ -18,13 +18,6 @@ function getTemplateUrl(fileName: string): string {
   throw new Error(`Template asset not found: ${fileName}`);
 }
 
-function getInformationUrl(fileName: string): string {
-  for (const [path, url] of Object.entries(informationAssets)) {
-    if (path.endsWith('/' + fileName)) return url as string;
-  }
-  throw new Error(`Information asset not found: ${fileName}`);
-}
-
 function getAltTemplateUrl(fileName: string, alt: string): string {
   let altAssets: Record<string, string>;
   switch (alt) {
@@ -290,30 +283,22 @@ export class FileService {
 
   private static async addInformationFilesToRoot(zip: JSZip): Promise<void> {
     console.log('Starting addInformationFilesToRoot...');
-    // Add all files from the information folder directly to ZIP root
-    const informationFiles = [
-      'Boostrix_Polio_-_Infoskriv.png',
-      'Boostrix_Polio_-_Infoskriv_eng.png',
-      'Egenerklæring_Boostrix_Polio.pdf',
-      'Egenerklæring_Boostrix_Polio_eng.pdf',
-      'Egenerklæring_Influensavaksine.pdf',
-      'Egenerklæring_Influensavaksine_eng.pdf',
-      'Influensa_-_Infoskriv.png',
-      'Influensa_-_Infoskriv_eng.png'
-    ];
-    console.log('Information files to add:', informationFiles.length);
-
-    for (const fileName of informationFiles) {
+    console.log('Available information assets:', Object.keys(informationAssets));
+    
+    // Use all files from the informationAssets import instead of hardcoded list
+    for (const [path, url] of Object.entries(informationAssets)) {
+      const fileName = path.split('/').pop();
+      if (!fileName) continue;
+      
       try {
         console.log('Processing information file:', fileName);
-        const fileUrl = getInformationUrl(fileName);
-        console.log('File URL:', fileUrl);
-        const response = await fetch(fileUrl);
+        console.log('File URL:', url);
+        const response = await fetch(url as string);
         if (!response.ok) {
           throw new Error(`Failed to fetch ${fileName}: ${response.status} ${response.statusText}`);
         }
         const blob = await response.blob();
-        console.log('File blob size:', blob.size);
+        console.log('File blob size:', blob.size, 'type:', blob.type);
         
         // Create user-friendly filename
         let friendlyName = fileName

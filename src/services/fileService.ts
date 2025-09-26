@@ -145,10 +145,6 @@ export class FileService {
     formData: VaccinationFormData, 
     selectedImageNames: string[]
   ): Promise<void> {
-    if (selectedImageNames.length === 0) {
-      throw new Error('Ingen bilder valgt for nedlasting');
-    }
-
     const zip = new JSZip();
     const companyFolder = zip.folder(formData.bedriftensNavn);
     
@@ -157,8 +153,21 @@ export class FileService {
     }
 
     try {
-      // Generate only selected images
-      const selectedImages = await this.generateSelectedImages(formData, selectedImageNames);
+      // If no images selected, use default selection (nographic and mission images)
+      let imagesToGenerate = selectedImageNames;
+      if (imagesToGenerate.length === 0) {
+        // Generate all images to determine defaults
+        const allImages = await this.generatePreviewImages(formData);
+        imagesToGenerate = allImages.images
+          .filter(img => 
+            img.name.toLowerCase().includes('nographic') || 
+            img.name.toLowerCase().includes('mission')
+          )
+          .map(img => img.name);
+      }
+
+      // Generate only selected/default images
+      const selectedImages = await this.generateSelectedImages(formData, imagesToGenerate);
       
       // Add selected images to ZIP
       for (const image of selectedImages.images) {

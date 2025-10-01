@@ -22,13 +22,24 @@ const formSchema = z.object({
   bedriftensNavn: z.string().min(2, 'Bedriftens navn må være minst 2 tegn'),
   datoNO: z.string().min(5, 'Norsk dato er påkrevd'),
   dateEN: z.string().min(5, 'Engelsk dato er påkrevd'),
-  klokkeslett: z.string().min(3, 'Klokkeslett er påkrevd'),
+  klokkeslett: z.string().optional(),
   includeTime: z.boolean().default(true),
   bookinglink: z.string().url('Må være en gyldig URL'),
   alternativ: z.enum(['1', '2', '3', '4'], {
     required_error: 'Du må velge et alternativ',
   }).default('1'), // Make Alt 1 the default
-});
+}).refine(
+  (data) => {
+    if (data.includeTime) {
+      return !!data.klokkeslett && data.klokkeslett.trim().length >= 3;
+    }
+    return true;
+  },
+  {
+    message: 'Klokkeslett er påkrevd',
+    path: ['klokkeslett'],
+  }
+);
 
 export function VaccinationForm() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -363,18 +374,21 @@ export function VaccinationForm() {
                   <FormField
                     control={form.control}
                     name="klokkeslett"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Klokkeslett</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Tidsrommet for vaksinering
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const includeTime = form.watch('includeTime');
+                      return (
+                        <FormItem>
+                          <FormLabel>Klokkeslett</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={!includeTime} placeholder={includeTime ? '' : 'Ikke nødvendig'} />
+                          </FormControl>
+                          <FormDescription>
+                            {includeTime ? 'Tidsrommet for vaksinering' : 'Feltet er ikke nødvendig når klokkeslett ikke skal inkluderes'}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField

@@ -73,6 +73,26 @@ function generateUserFriendlyFilename(originalFileName: string, companyName: str
   return `${companyName} - ${posterType} (${language})`;
 }
 
+function getAlternativeLabel(alt: string): string {
+  switch (alt) {
+    case '1':
+      return 'Alt 1';
+    case '2':
+      return 'Alt 2';
+    case '3':
+      return 'Alt 3';
+    case '4':
+      return 'Alt 4';
+    default:
+      return `Alt ${alt}`;
+  }
+}
+
+function getZipFileName(formData: VaccinationFormData): string {
+  const altLabel = getAlternativeLabel(formData.alternativ);
+  return `${formData.bedriftensNavn}_vaksinasjonsmateriale (${altLabel}).zip`;
+}
+
 export class FileService {
   static async generatePreviewImages(formData: VaccinationFormData): Promise<{
     images: Array<{ name: string; originalName: string; blob: Blob }>;
@@ -138,6 +158,7 @@ export class FileService {
       console.log('Generating selected images:', selectedImageNames);
       
       const images: Array<{ name: string; blob: Blob }> = [];
+      const missingTemplates: string[] = [];
       
       // Get the alternative-specific templates
       const altAssets = getAltTemplateAssets(formData.alternativ);
@@ -157,6 +178,7 @@ export class FileService {
         
         if (!templateUrl) {
           console.warn(`Template not found for: ${selectedName}`);
+          missingTemplates.push(selectedName);
           continue;
         }
         
@@ -185,6 +207,9 @@ export class FileService {
       }
       
       console.log(`Generated ${images.length} selected images`);
+      if (missingTemplates.length > 0) {
+        console.warn('Missing templates for requested selections:', missingTemplates);
+      }
       
       return { images };
       
@@ -203,22 +228,41 @@ export class FileService {
     const zip = new JSZip();
 
     try {
+      const altAssets = getAltTemplateAssets(formData.alternativ);
+      const allTemplateNames = Object.keys(altAssets)
+        .map(path => path.split('/').pop())
+        .filter((name): name is string => Boolean(name));
+
+      if (allTemplateNames.length === 0) {
+        throw new Error(`No templates available for alternative ${formData.alternativ}`);
+      }
+
       // If no images selected, use default selection (all alternative images)
       let imagesToGenerate = selectedImageNames;
-      if (imagesToGenerate.length === 0) {
+      const hasExplicitSelection = imagesToGenerate.length > 0;
+      if (!hasExplicitSelection) {
         console.log('No images selected, generating all images...');
-        // Generate all images to determine defaults
-        const allImages = await this.generatePreviewImages(formData);
-        // Default selection is ALL files from selected alternative
-        imagesToGenerate = allImages.images.map(img => img.name);
+        imagesToGenerate = allTemplateNames;
         console.log('Default images to generate:', imagesToGenerate);
       }
 
       console.log('Generating selected images...');
       // Generate only selected/default images
-      const selectedImages = await this.generateSelectedImages(formData, imagesToGenerate);
+      let selectedImages = await this.generateSelectedImages(formData, imagesToGenerate);
       console.log('Selected images generated:', selectedImages.images.length);
-      
+
+      if (selectedImages.images.length === 0 && hasExplicitSelection) {
+        console.warn('No posters generated for explicit selection. Falling back to all templates for the chosen alternative.');
+        selectedImages = await this.generateSelectedImages(formData, allTemplateNames);
+        if (selectedImages.images.length === 0) {
+          throw new Error('Could not generate posters for the selected alternative.');
+        }
+      }
+
+      if (selectedImages.images.length === 0) {
+        throw new Error('Could not generate any posters for the selected alternative.');
+      }
+
       // Add selected images directly to ZIP root
       for (const image of selectedImages.images) {
         console.log('Adding selected image to ZIP:', image.name);
@@ -233,7 +277,7 @@ export class FileService {
       // Generate and download the zip file
       const content = await zip.generateAsync({ type: 'blob' });
       console.log('ZIP generated successfully, downloading...');
-      saveAs(content, `${formData.bedriftensNavn}_vaksinasjonsmateriale.zip`);
+      saveAs(content, getZipFileName(formData));
       
     } catch (error) {
       console.error('Detailed error in downloadSelectedImages:', error);
@@ -269,7 +313,7 @@ export class FileService {
       // Generate and download the zip file
       const content = await zip.generateAsync({ type: 'blob' });
       console.log('ZIP generated successfully, downloading...');
-      saveAs(content, `${formData.bedriftensNavn}_vaksinasjonsmateriale.zip`);
+      saveAs(content, getZipFileName(formData));
       
     } catch (error) {
       console.error('Detailed error in createCompanyFolder:', error);

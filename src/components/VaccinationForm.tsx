@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -51,6 +51,7 @@ export function VaccinationForm() {
   const [showPreview, setShowPreview] = useState(false);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [nameMapping, setNameMapping] = useState<Map<string, string>>(new Map()); // displayName -> originalName
+  const initialAlternativeApplied = useRef(false);
 
   // Cleanup preview images when component unmounts
   useEffect(() => {
@@ -74,7 +75,7 @@ export function VaccinationForm() {
     },
   });
 
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
     // Trigger form validation
     const isValid = await form.trigger();
     
@@ -89,6 +90,23 @@ export function VaccinationForm() {
     const values = form.getValues();
     onSubmit(values);
   };
+
+  const currentAlternative = form.watch('alternativ');
+
+  useEffect(() => {
+    if (!initialAlternativeApplied.current) {
+      initialAlternativeApplied.current = true;
+      return;
+    }
+
+    // Revoke existing preview object URLs before clearing state
+    previewImages.forEach(image => URL.revokeObjectURL(image.url));
+
+    setShowPreview(false);
+    setPreviewImages([]);
+    setSelectedImages(new Set());
+    setNameMapping(new Map());
+  }, [currentAlternative]);
 
   const onSubmit = async (values: VaccinationFormData) => {
     setIsGenerating(true);

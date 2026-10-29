@@ -11,10 +11,10 @@ export class PDFService {
   }
 
   static async replaceDateInPDF(
-    pdfBytes: ArrayBuffer,
+    pdfBytes: ArrayBuffer | Uint8Array,
     newDate: string,
     searchText: string = 'date'
-  ): Promise<ArrayBuffer> {
+  ): Promise<Uint8Array> {
     try {
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const pages = pdfDoc.getPages();
@@ -48,9 +48,9 @@ export class PDFService {
   }
 
   static async replaceQRInPDF(
-    pdfBytes: ArrayBuffer,
+    pdfBytes: ArrayBuffer | Uint8Array,
     qrText: string
-  ): Promise<ArrayBuffer> {
+  ): Promise<Uint8Array> {
     try {
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const pages = pdfDoc.getPages();
@@ -100,7 +100,7 @@ export class PDFService {
       // Then replace QR code
       const finalBytes = await this.replaceQRInPDF(dateReplacedBytes, qrText);
       
-      return new Blob([finalBytes], { type: 'application/pdf' });
+      return new Blob([finalBytes.slice()], { type: 'application/pdf' });
     } catch (error) {
       console.error('Error creating edited poster:', error);
       throw new Error('Failed to create edited poster');

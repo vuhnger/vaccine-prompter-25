@@ -19,11 +19,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Refuse PRs with commits from anyone but Dependabot
+      - name: Refuse PRs with commits that are not signed Dependabot commits
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr view "$PR_URL" --json commits --jq '[.commits[].authors[].login] | all(. == "dependabot[bot]")' | grep -qx true
+          GH_REPO: ${{ github.repository }}
+        run: gh api "repos/$GH_REPO/pulls/$PR_NUMBER/commits" --jq 'all(.[]; .author.login == "dependabot[bot]" and .commit.verification.verified)' | grep -qx true
 
       - name: Approve, since the main ruleset requires one review
         if: steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch'

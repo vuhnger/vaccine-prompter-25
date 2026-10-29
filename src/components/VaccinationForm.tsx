@@ -22,12 +22,12 @@ const formSchema = z.object({
   bedriftensNavn: z.string().min(2, 'Bedriftens navn må være minst 2 tegn'),
   datoNO: z.string().min(5, 'Norsk dato er påkrevd'),
   dateEN: z.string().min(5, 'Engelsk dato er påkrevd'),
-  klokkeslett: z.string().optional(),
-  includeTime: z.boolean().default(true),
+  klokkeslett: z.string(),
+  includeTime: z.boolean(),
   bookinglink: z.string().url('Må være en gyldig URL'),
   alternativ: z.enum(['1', '2', '3', '4'], {
-    required_error: 'Du må velge et alternativ',
-  }).default('1'), // Make Alt 1 the default
+    error: 'Du må velge et alternativ',
+  }),
 }).refine(
   (data) => {
     if (data.includeTime) {
@@ -60,7 +60,7 @@ export function VaccinationForm() {
     };
   }, [previewImages]);
 
-  const form = useForm<VaccinationFormData>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange', // Enable real-time validation
     defaultValues: {

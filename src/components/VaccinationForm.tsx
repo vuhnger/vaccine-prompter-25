@@ -290,7 +290,7 @@ export function VaccinationForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-light-mint via-background to-mint/20">
+    <div className="min-h-screen bg-linear-to-br from-light-mint via-background to-mint/20">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
@@ -309,8 +309,8 @@ export function VaccinationForm() {
             </p>
           </div>
 
-          <Card className="shadow-xl border-moss-green/20 backdrop-blur-sm bg-white/90">
-            <CardHeader className="bg-gradient-to-r from-light-mint to-mint/30 border-b border-moss-green/10">
+          <Card className="shadow-xl border-moss-green/20 backdrop-blur-xs bg-white/90">
+            <CardHeader className="bg-linear-to-r from-light-mint to-mint/30 border-b border-moss-green/10">
               <CardTitle className="text-2xl text-moss-green">Bedriftsinformasjon</CardTitle>
               <CardDescription className="text-moss-green/70">
                 Fyll ut informasjonen for å generere tilpassede plakater, e-post og dokumenter. 
@@ -321,7 +321,7 @@ export function VaccinationForm() {
                 variant="secondary" 
                 size="sm"
                 onClick={fillDemoData}
-                className="w-fit mt-2 bg-mint text-moss-green hover:bg-mint/80"
+                className="w-fit bg-mint text-moss-green hover:bg-mint/80"
               >
                 Fyll demo-data
               </Button>
@@ -421,7 +421,7 @@ export function VaccinationForm() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>
+                          <FormLabel className="leading-4">
                             Inkluder klokkeslett i e-post og materiell
                           </FormLabel>
                           <FormDescription>
@@ -671,7 +671,7 @@ export function VaccinationForm() {
                           <img 
                             src={image.url} 
                             alt={`${image.name} forhåndsvisning`}
-                            className={`w-full h-auto border rounded-lg shadow-sm transition-opacity ${
+                            className={`w-full h-auto border rounded-lg shadow-xs transition-opacity ${
                               isSelected ? 'opacity-100' : 'opacity-70 hover:opacity-90'
                             }`}
                           />

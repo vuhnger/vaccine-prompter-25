@@ -67,17 +67,18 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
-    // Production build optimizations
     build: {
-      rollupOptions: {
+      rolldownOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            ui: ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-checkbox'],
-            utils: ['jszip', 'qrcode', 'zod']
-          }
-        }
-      }
-    }
+          codeSplitting: {
+            groups: [
+              { name: "vendor", test: /node_modules[\\/](react|react-dom)[\\/]/ },
+              { name: "ui", test: /node_modules[\\/]@radix-ui[\\/]/ },
+              { name: "utils", test: /node_modules[\\/](jszip|qrcode|zod)[\\/]/ },
+            ],
+          },
+        },
+      },
+    },
   };
 });
